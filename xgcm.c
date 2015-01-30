@@ -47,6 +47,13 @@ static struct option o_config = {
     .val = 'c'
 };
 
+static struct option o_config = {
+    .name = "file-ext",
+    .has_arg = 1,
+    .flag = NULL,
+    .val = 'c'
+};
+
 struct option long_opts[4];
 
 void initialize_long_opts() {
