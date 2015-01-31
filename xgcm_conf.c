@@ -2,17 +2,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <wordexp.h>
 #include "ini/ini.h"
 #include "simple_hmap.h"
 #include "utils.h"
 #include "xgcm_conf.h"
 
+
+
+
 int handle_ini(
-    void * void_conf, const 
-    char * section, const char * name, const char * value) {
+    void * void_conf, const char * section, 
+    const char * name, const char * value) {
 
     xgcm_configuration* conf = (xgcm_configuration*)void_conf;
-
+    
     if (MATCH("xgcm", "version")) {
         conf->version = atoi(value);
     }
@@ -28,10 +32,14 @@ int handle_ini(
     else if (MATCH("xgcm", "verbose")) {
         return strbool(&(conf->verbose),value);
     }
-    else if (strcmp("attributes",section)) {
+    else if (0 == strcmp("attributes", section)) {
+        printf("adding relation key='%s' value='%s'\n",
+                name, value);
         add_relation(conf, name, value);
     }
     else { 
+        fprintf(stderr, "failed to match section='%s' value='%s'\n",
+                    section, name);
         return 0;
     }
     return 1;
@@ -42,12 +50,19 @@ void build_default_config(xgcm_configuration * conf){
     conf->recursive = true;
     conf->follow_symlinks = false;
     conf->verbose = true;
+
+    conf->files = NULL;
+    conf->files_tail = NULL;
+
+    conf->relations = malloc(sizeof(hmap));
+    hmap_init(conf->relations, 50);
 }
 
 
 
-static void add_files(xgcm_configuration * conf, const char * files) {
-    //TODO take a comma separated list of paths and insert them all
+void add_files(xgcm_configuration * conf, const char * files) {
+    printf("adding files from conf..\n");
+
     char * buffer = malloc(strlen(files) + 1);
     memcpy(buffer, files, strlen(files) + 1);
     char * head = buffer;
@@ -63,15 +78,44 @@ static void add_files(xgcm_configuration * conf, const char * files) {
             tail = (char *)(head +1);
         }
     }
+    add_file(conf, tail);   
 }
 
-static void add_file(xgcm_configuration * conf, const char * value) {
-    node * new_node = hmap_init_node(value, NULL, 0);
-    conf->files_tail->next = new_node;
-    conf->files_tail = new_node;
+void add_file(xgcm_configuration * conf, const char * rawpath) {
+
+    wordexp_t expand;
+    wordexp(rawpath, &expand, 0);
+    char * path = expand.we_wordv[0];
+
+    printf ("adding file '%s' to search path.\n",
+            path);
+
+    node * new_node = hmap_init_node(path, NULL, 0);
+    if (conf->files_tail) {
+        conf->files_tail->next = new_node;
+        conf->files_tail = new_node;
+    } else{
+        conf->files = new_node;
+        conf->files_tail = new_node;
+    }
+
+    wordfree(&expand);
+    
 }
 
-static void add_relation(xgcm_configuration * conf, const char * key, const char * value) {
+void print_files(node * head){
+    printf("[");
+    while (head) {
+        printf("%s, ",head->key);
+        head = head->next;
+    }
+    printf("]\n");
+
+}
+
+void add_relation(
+        xgcm_configuration * conf, 
+        const char * key, const char * value) {
     hmap_insert (conf->relations, key, value, strlen(value) + 1);
 }
 
@@ -87,5 +131,8 @@ char * next_path(xgcm_configuration * conf) {
 }
 
 char * get_relation(xgcm_configuration * conf, const char * key) {
-    return hmap_lookup(conf->relations, key);
+    char * stripped_key = strip_string_whitespace(key);
+    char * result = hmap_lookup(conf->relations, stripped_key);
+    free (stripped_key);
+    return result;
 }

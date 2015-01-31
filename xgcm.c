@@ -12,10 +12,8 @@ extern int optind;
 
 char * CONFIG_FILE = "~/.config/xgcm/xgcmrc";
 
-xgcm_configuration conf;
-
 void print_helptext() {
-    printf("helptext not writte :L\n");
+    printf("helptext not written :L\n");
 }
 
 
@@ -47,11 +45,11 @@ static struct option o_config = {
     .val = 'c'
 };
 
-static struct option o_config = {
+static struct option o_ext = {
     .name = "file-ext",
     .has_arg = 1,
     .flag = NULL,
-    .val = 'c'
+    .val = 'f'
 };
 
 struct option long_opts[4];
@@ -64,8 +62,23 @@ void initialize_long_opts() {
 }
 
 
-void handle_option(char option) {
+void handle_option(xgcm_conf *c, char option) {
     switch(option) {
+        case 'v':
+            c->verbose = true;
+            break;
+        case 'l':
+            c->follow_symlinks = true;
+            break;
+        case 'r':
+            c->recursive = true;
+            break;
+        case 'c': // config
+            CONFIG_FILE = optarg;
+            break;
+        case 'f':
+            c->file_extension = optarg;
+            break;
         default:
             print_helptext();
             exit(1);
@@ -78,37 +91,57 @@ void handle_option(char option) {
 int main(int argc, char **argv) {
     initialize_long_opts();
 
-    // load the configuration file, printing errors on failure
-    if (ini_parse(CONFIG_FILE, handle_ini, &conf) < 0 ) {
-        // no config file loaded
-        build_default_config(&conf);
-    }
+    xgcm_configuration conf;
+    conf.file_extension = "xgcm";
+    build_default_config(&conf);
 
-    // read all options from getopt, overwriting the options specified
-    // in the ini file
+    // looks for '--conf in the options' 
     char option;
     while ((option = getopt_long(argc, argv,"rvl:c:", long_opts, NULL)) != -1) {
-        handle_option(option);
+        if (option == 'c'){
+            handle_option(&conf, option);
+        }
     }
 
-    // if no targets specified, default to the targets loaded from
+    // load the configuration file, printing errors on failure
+    if (ini_parse(CONFIG_FILE, handle_ini, &conf) < 0 ) {
+        fprintf(stderr, "error loading the config file.\n");
+    }
+
+    // read remaining options from getopt, overwriting the config file's options
+    optind = 1;
+    while ((option = getopt_long(argc, argv,"rvl:c:", long_opts, NULL)) != -1) {
+        handle_option(&conf, option);
+    }
+
+
+    printf("conf parsed...\n");
+
+    // if no file targers specified, default to the targets loaded from
     // the config file. 
     if (optind == argc){
+        print_files(conf.files); 
         char *path = next_path(&conf);
         // go to config if no path has been set
-        if (path == NULL)
-            path = "~/.config";
+        if (path == NULL) {
+            printf("no search targets specified, defaulting to '~/.config/'\n");
+            add_file(&conf, "~/.config/");
+        }
 
-        for (;  path != NULL; 
+
+        for (; 
+                path !=NULL; 
                 path = next_path(&conf)) {
-            convert_by_path(path);
+            convert_by_path(&conf, path);
+            print_files(conf.files); 
         }
     }
     // else, parse the remaining arguments as either directories to traverse
     // or as paths of files to read
     else {
         for ( ;optind < argc; optind++) {
-            convert_by_path(argv[optind]);
+            printf("%s\n", argv[optind]);
+            convert_by_path(&conf, argv[optind]);
         }
     }
     // exit successfully

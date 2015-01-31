@@ -29,21 +29,25 @@ typedef struct  xgcm_configuration {
 	bool recursive;
 	bool follow_symlinks;
 	bool verbose;
+	char * file_extension;
 } xgcm_configuration;
+
+typedef xgcm_configuration xgcm_conf;
 
 int handle_ini(
     void * void_conf, const char * section, 
     const char * name, const char * value);
 
 void build_default_config(xgcm_configuration * conf);
+void load_paths_from_conf(xgcm_configuration *conf);
 
 char * next_path(xgcm_configuration * conf);
 char * get_relation(xgcm_configuration * conf, const char * relation);
 
-static void add_files(xgcm_configuration * conf, const char * files);
-static void add_file(xgcm_configuration * conf, const char * value);
-static void add_relation(xgcm_configuration * conf, 
-		const char * key, const char * value);
+void add_files(xgcm_configuration * conf, const char * files);
+void add_file(xgcm_configuration * conf, const char * value);
+void add_relation(xgcm_configuration * conf, 
+        const char * key, const char * value);
 
 
 #endif
