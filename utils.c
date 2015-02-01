@@ -112,8 +112,6 @@ char * strip_string_whitespace(const char * str) {
     }
     lst_nonsp++;
 
-    printf("%d %d\n",fst_nonsp, lst_nonsp);
-
     int d = lst_nonsp - fst_nonsp;
     char * newstr = malloc(sizeof(char) * (d + 1));
     newstr[d] = '\0';

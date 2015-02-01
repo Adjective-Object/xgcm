@@ -10,7 +10,7 @@
 
 
 
-
+bool relations_header = true;
 int handle_ini(
     void * void_conf, const char * section, 
     const char * name, const char * value) {
@@ -33,12 +33,16 @@ int handle_ini(
         return strbool(&(conf->verbose),value);
     }
     else if (0 == strcmp("attributes", section)) {
-        printf("adding relation key='%s' value='%s'\n",
+        if (relations_header) {
+            d_printf("relations:\n");
+            relations_header = false;
+        }
+        d_printf("  ~ '%s': '%s'\n",
                 name, value);
         add_relation(conf, name, value);
     }
     else { 
-        fprintf(stderr, "failed to match section='%s' value='%s'\n",
+        df_printf( "failed to match section='%s' value='%s'\n",
                     section, name);
         return 0;
     }
@@ -61,7 +65,7 @@ void build_default_config(xgcm_configuration * conf){
 
 
 void add_files(xgcm_configuration * conf, const char * files) {
-    printf("adding files from conf..\n");
+    printf("files:\n");
 
     char * buffer = malloc(strlen(files) + 1);
     memcpy(buffer, files, strlen(files) + 1);
@@ -87,7 +91,7 @@ void add_file(xgcm_configuration * conf, const char * rawpath) {
     wordexp(rawpath, &expand, 0);
     char * path = expand.we_wordv[0];
 
-    printf ("adding file '%s' to search path.\n",
+    d_printf ("  + '%s'\n",
             path);
 
     node * new_node = hmap_init_node(path, NULL, 0);

@@ -8,6 +8,10 @@
 #include "xgcm_conf.h"
 #include "ini/ini.h"
 
+#define d_printf(...) if (conf.verbose) {printf(__VA_ARGS__);}
+#define df_printf(...) if (conf.verbose) {fprintf(stderr,__VA_ARGS__);}
+
+
 extern int optind;
 
 char * CONFIG_FILE = "~/.config/xgcm/xgcmrc";
@@ -105,7 +109,7 @@ int main(int argc, char **argv) {
 
     // load the configuration file, printing errors on failure
     if (ini_parse(CONFIG_FILE, handle_ini, &conf) < 0 ) {
-        fprintf(stderr, "error loading the config file.\n");
+        df_printf("error loading the config file '%s'.\n", CONFIG_FILE);
     }
 
     // read remaining options from getopt, overwriting the config file's options
@@ -115,16 +119,14 @@ int main(int argc, char **argv) {
     }
 
 
-    printf("conf parsed...\n");
 
     // if no file targers specified, default to the targets loaded from
     // the config file. 
     if (optind == argc){
-        print_files(conf.files); 
         char *path = next_path(&conf);
         // go to config if no path has been set
         if (path == NULL) {
-            printf("no search targets specified, defaulting to '~/.config/'\n");
+            d_printf("no search targets specified, defaulting to '~/.config/'\n");
             add_file(&conf, "~/.config/");
         }
 
@@ -133,17 +135,17 @@ int main(int argc, char **argv) {
                 path !=NULL; 
                 path = next_path(&conf)) {
             convert_by_path(&conf, path);
-            print_files(conf.files); 
         }
     }
     // else, parse the remaining arguments as either directories to traverse
     // or as paths of files to read
     else {
         for ( ;optind < argc; optind++) {
-            printf("%s\n", argv[optind]);
+            d_printf("%s\n", argv[optind]);
             convert_by_path(&conf, argv[optind]);
         }
     }
+    d_printf("\nfinished parsing\n");
     // exit successfully
     return 0;
 }

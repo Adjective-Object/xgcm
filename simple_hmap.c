@@ -51,7 +51,6 @@ int hmap_hash(hmap * h, const char * key) {
 // if the hashmap already contains a value for that key, fails and returns 0
 int hmap_insert(hmap * h, const char * key, const void * value, size_t payload_size) {
 	int hash = hmap_hash(h,key);
-	printf("'%s' hashes to %d, inserting\n", key, hash);
 	node * head = h->nodes[hash];
 	node * new_node = hmap_init_node(key, value, payload_size);
 
@@ -76,7 +75,6 @@ int hmap_insert(hmap * h, const char * key, const void * value, size_t payload_s
 
 void * hmap_lookup(hmap *h, const char * key) {
 	int hash = hmap_hash(h,key);
-	printf("'%s' hashes to %d, performing lookup\n", key, hash);
 	node * head = h->nodes[hash];
 	while(head != NULL) {
 		if (0 == strcmp(key, head->key)) {

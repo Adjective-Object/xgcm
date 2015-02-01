@@ -19,24 +19,24 @@
 
 void convert_by_path(xgcm_conf * conf, const char * path) {
 
-	printf("path: %s\n", path);
+	printf("\npath: %s\n", path);
 	//check if file exists
 	struct stat fstat;
 	if ( 0 > lstat(path, &fstat) ) {
-		fprintf(stderr, 
+		df_printf( 
 		"error: specified file %s does not exist\n", path);
 	}
 	else {
 
 		// is symlink 
 		if (S_IFLNK == (fstat.st_mode & S_IFMT) && conf->follow_symlinks) {
-			printf("traversing symlink...\n");
+			d_printf("traversing symlink...\n");
 
 			char * path_buf = 
 				malloc(PATH_BUF_LEN);
 
 			if (-1 != readlink(path, path_buf, PATH_BUF_LEN)) {
-				fprintf(stderr, "error reading symlink %s\n", path);
+				df_printf( "error reading symlink %s\n", path);
 				return;
 			}
 
@@ -58,7 +58,7 @@ void convert_by_path(xgcm_conf * conf, const char * path) {
 
 		// unknown format
 		else {
-			fprintf(stderr, "unknown format, not parsing %s\n", path);
+			df_printf( "unknown format, not parsing %s\n", path);
 		}
 
 	}
@@ -67,9 +67,10 @@ void convert_by_path(xgcm_conf * conf, const char * path) {
 
 static void convert_file(xgcm_conf * conf, const char * path) {
 	//TODO this
-	printf("processing file %s\n", path);
+	d_printf("  processing file '%s' ", path);
+	fflush(stdout);
 	char * output_path = get_output_path(conf, path);
-	printf("output path %s\n", output_path);
+	d_printf("-> '%s'\n", output_path);
 
 	FILE * raw_file = fopen(path, "r");
 	FILE * out_file = fopen(output_path, "w");
@@ -97,8 +98,8 @@ static void convert_file(xgcm_conf * conf, const char * path) {
 			}
 			if (0 == memcmp(&read_buffer[i], STARTING_TAG, TAG_LENGTH)) {
 				if (capturing) {
-					fprintf(stderr, "syntax error line %d\n", n_lines);
-					fprintf(stderr, "\t cannot open tag over existing open tag");
+					df_printf( "syntax error line %d\n", n_lines);
+					df_printf( "\t cannot open tag over existing open tag");
 					exit(1);
 				} else {
 					//switch to capturing, dump write buffer to disk
@@ -110,8 +111,8 @@ static void convert_file(xgcm_conf * conf, const char * path) {
 
 			} else if (0 == memcmp(&read_buffer[i], ENDING_TAG, 2)) {
 				if (!capturing) {
-					fprintf(stderr, "syntax error line %d\n", n_lines);
-					fprintf(stderr, 
+					df_printf( "syntax error line %d\n", n_lines);
+					df_printf( 
 						"\t cannot close tag when tag has not been opened");
 					exit(1);
 				} else{
@@ -120,13 +121,13 @@ static void convert_file(xgcm_conf * conf, const char * path) {
 					i+=TAG_LENGTH_MINUS_ONE;
 					// check if value in config map, else write the 
 					// captured text to buffer
-					printf("finished capture \'%s\'\n",
+					d_printf("    capture \'%s\'\n",
 						capture_buffer.content);
 					char * relbuf = get_relation(conf, capture_buffer.content);
 					if (relbuf) {
 						fwrite(relbuf, sizeof(char), strlen(relbuf), out_file);
 					} else {
-						fprintf(stderr, 
+						df_printf( 
 							"cannot find entry for key \'%s\'\n",
 							capture_buffer.content);
 						buffer_write(&capture_buffer, out_file);
@@ -139,15 +140,15 @@ static void convert_file(xgcm_conf * conf, const char * path) {
 				if(capturing) {
 					// put in capture buffer
 					if (!buffer_putc(&capture_buffer, read_buffer[i])) {
-						fprintf(stderr, "parse error line %d\n", n_lines);
-						fprintf(stderr, "\tcaptured text is greater than maximum capture_buffer size (%d)", CAPTURE_BUF_LEN);
+						df_printf( "parse error line %d\n", n_lines);
+						df_printf( "\tcaptured text is greater than maximum capture_buffer size (%d)", CAPTURE_BUF_LEN);
 						exit(1);
 					}
 				} else {
 					// put in write buffer
 					if (!buffer_putc(&write_buffer, read_buffer[i])) {
-						fprintf(stderr, "parse error line %d\n", n_lines);
-						fprintf(stderr, "\tcaptured text is greater than maximum write_buffer size (%d)", WRITE_BUF_LEN);
+						df_printf( "parse error line %d\n", n_lines);
+						df_printf( "\tcaptured text is greater than maximum write_buffer size (%d)", WRITE_BUF_LEN);
 						exit(1);
 					}
 				}
@@ -177,7 +178,7 @@ static void scan_directory(xgcm_conf * conf, const char * path) {
 
 		}
 	} else{
-		fprintf(stderr, "cannot open directory %s", path);
+		df_printf( "cannot open directory %s", path);
 	}
 }
 
