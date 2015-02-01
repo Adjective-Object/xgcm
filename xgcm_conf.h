@@ -3,11 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "ini/ini.h"
 #include "simple_hmap.h"
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-
 
 typedef struct __attribute__((__packed__)) string_node {
 	struct string_node * next;

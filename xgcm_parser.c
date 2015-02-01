@@ -3,8 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include "xgcm_traversal.h"
 #include "xgcm_parser.h"
 #include "xgcm_conf.h"
+#include "string_buffer.h"
 #include "utils.h"
 #include <sys/stat.h>
 
@@ -12,65 +14,12 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#define PATH_BUF_LEN (sizeof(char) * 1000)
-
-
-
-
-void convert_by_path(xgcm_conf * conf, const char * path) {
-
-	printf("\npath: %s\n", path);
-	//check if file exists
-	struct stat fstat;
-	if ( 0 > lstat(path, &fstat) ) {
-		df_printf( 
-		"error: specified file %s does not exist\n", path);
-	}
-	else {
-
-		// is symlink 
-		if (S_IFLNK == (fstat.st_mode & S_IFMT) && conf->follow_symlinks) {
-			d_printf("traversing symlink...\n");
-
-			char * path_buf = 
-				malloc(PATH_BUF_LEN);
-
-			if (-1 != readlink(path, path_buf, PATH_BUF_LEN)) {
-				df_printf( "error reading symlink %s\n", path);
-				return;
-			}
-
-			convert_by_path(conf, path_buf);
-			free(path_buf);
-			return;
-		}
-
-		// is file
-		else if (S_IFREG == (fstat.st_mode & S_IFMT)) {
-			convert_file(conf, path);
-		} 
-		
-		// is directory
-		else if (S_IFDIR == (fstat.st_mode & S_IFMT)) {
-			scan_directory(conf, path);
-			return;
-		}
-
-		// unknown format
-		else {
-			df_printf( "unknown format, not parsing %s\n", path);
-		}
-
-	}
-}
-
-
-static void convert_file(xgcm_conf * conf, const char * path) {
+void convert_file(xgcm_conf * conf, const char * path) {
 	//TODO this
-	d_printf("  processing file '%s' ", path);
 	fflush(stdout);
 	char * output_path = get_output_path(conf, path);
-	d_printf("-> '%s'\n", output_path);
+	d_printf("  processing file '%s' -> '%s'\n", 
+		path, output_path);
 
 	FILE * raw_file = fopen(path, "r");
 	FILE * out_file = fopen(output_path, "w");
@@ -90,7 +39,7 @@ static void convert_file(xgcm_conf * conf, const char * path) {
 									sizeof(char), 
 									FBUFLEN - TAG_LENGTH_MINUS_ONE, 
 									raw_file))) {
-		for (i=1; i<readsize; i++) {
+		for (i=0; i<readsize; i++) {
 			// parse the text at the current position. Assumes either tag
 			// does not begin with a newline. Generally a safe assumption
 			if (read_buffer[i] == '\n') {
@@ -163,70 +112,4 @@ static void convert_file(xgcm_conf * conf, const char * path) {
 	fclose(out_file);
 
 	free(output_path);
-}
-
-static void scan_directory(xgcm_conf * conf, const char * path) {
-	DIR *dp;
-	struct dirent *ep;
-	dp = opendir(path);
-
-	if (dp != NULL) {
-		while( (ep = readdir(dp)) ) {
-			if (path_endswith(ep->d_name, conf->file_extension)) {
-				convert_file(conf, ep->d_name);
-			}
-
-		}
-	} else{
-		df_printf( "cannot open directory %s", path);
-	}
-}
-
-
-
-
-char * get_output_path(xgcm_conf * conf, const char * in_path) {
-    if (path_endswith(in_path, conf->file_extension)) {
-        return extless_path(in_path);
-    } else{
-        return path_with_output_ext(conf, in_path);
-    }
-}
-
-char * path_with_output_ext(xgcm_conf * conf, const char *in_path) {
-    int len_in = strlen(in_path);
-    int ext_len = strlen(conf->file_extension) + 6;
-
-    char * out_path = malloc(sizeof(char) * (len_in + ext_len) );
-    memcpy(out_path, in_path, len_in);
-    strcat(out_path, ".");
-    strcat(out_path, conf->file_extension);
-    strcat(out_path, "-out");
-
-    return out_path;
-}
-
-char * extless_path(const char * original_path) {
-
-    int len = strlen(original_path) + 1;
-
-    // find the location of the point
-    const char * last_dot = NULL;
-    const char * tracer = original_path;
-    while (*tracer != '\0') {
-        if (*tracer =='.')
-            last_dot = tracer;
-        tracer++;
-    }
-
-    // if there was no period, set it to the end of the string
-    if (last_dot == NULL)
-        last_dot = original_path + len;
-
-    int sublen = (int)(last_dot - original_path);
-    char * out_path = malloc(sublen);
-    memcpy(out_path, original_path, sublen);
-    out_path[sublen+1] = '\0';
-
-    return out_path;
 }
