@@ -13,8 +13,6 @@ void scan_directory(xgcm_conf * conf, const char * path);
 char * path_with_output_ext(xgcm_conf * conf, const char * in_path);
 char * extless_path(const char * in_path);
 
-char * get_input_path(xgcm_conf * conf, const char * in_path);
-char * get_output_path(xgcm_conf * conf, const char * in_path);
 char * path_with_output_ext(xgcm_conf * conf, const char * in_path);
 char * extless_path(const char * in_path);
 

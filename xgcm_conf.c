@@ -49,17 +49,27 @@ int handle_ini(
     return 1;
 }
 
-
 void build_default_config(xgcm_configuration * conf){
     conf->recursive = true;
     conf->follow_symlinks = false;
-    conf->verbose = true;
+    conf->verbose = false;
+    conf->make_temp_files = true;
 
     conf->files = NULL;
     conf->files_tail = NULL;
 
     conf->relations = malloc(sizeof(hmap));
     hmap_init(conf->relations, 50);
+
+    char * deftemp = "/tmp/xgcm/";
+    conf->tempdir_path = malloc(sizeof(char) * (strlen(deftemp) + 1));
+    strcpy(conf->tempdir_path, deftemp);
+
+    char * defext = "xgcm";
+    conf->file_extension = malloc(sizeof(char) * (strlen(defext) + 1));
+    strcpy(conf->file_extension, defext);
+
+    print_conf(conf, "init");
 }
 
 
@@ -139,4 +149,18 @@ char * get_relation(xgcm_configuration * conf, const char * key) {
     char * result = hmap_lookup(conf->relations, stripped_key);
     free (stripped_key);
     return result;
+}
+
+void print_conf(xgcm_configuration * conf, char * context) {
+    printf("xgcm_conf '%s': {\n", context);
+    printf("        version: %d\n", conf->version);
+    
+    printf("      recursive: %d\n", conf->recursive);
+    printf("follow_symlinks: %d\n", conf->follow_symlinks);
+    printf("        verbose: %d\n", conf->verbose);
+    printf("make_temp_files: %d\n", conf->make_temp_files);
+
+    printf("   tempdir_path: '%s'\n", conf->tempdir_path);
+    printf(" file_extension: '%s'\n", conf->file_extension);
+    printf("}\n");
 }

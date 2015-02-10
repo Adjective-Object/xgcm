@@ -91,7 +91,7 @@ int ini_parse_file(FILE* file,
     while (fgets(line, INI_MAX_LINE, file) != NULL) {
         lineno++;
 
-        start = line;
+        start = lskip(line);
 #if INI_ALLOW_BOM
         if (lineno == 1 && (unsigned char)start[0] == 0xEF &&
                            (unsigned char)start[1] == 0xBB &&

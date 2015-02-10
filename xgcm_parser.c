@@ -15,14 +15,26 @@
 #include <dirent.h>
 
 void convert_file(xgcm_conf * conf, const char * path) {
-	//TODO this
 	fflush(stdout);
-	char * output_path = get_output_path(conf, path);
+	char * output_path = get_writing_path(conf, path);
 	d_printf("  processing file '%s' -> '%s'\n", 
 		path, output_path);
 
-	FILE * raw_file = fopen(path, "r");
-	FILE * out_file = fopen(output_path, "w");
+	mk_temp_dir(conf);
+
+	FILE *raw_file, *out_file;
+	if ((raw_file = fopen(path, "r")) == NULL) {
+		char * errmsg = malloc(200);
+		sprintf(errmsg, "open file '%s' for reading", path);
+		perror(errmsg);
+		exit(1);
+	}
+	if ((out_file = fopen(output_path, "w+")) == NULL) {
+		char * errmsg = malloc(200);
+		sprintf(errmsg, "open file '%s' for writing", output_path);
+		perror(errmsg);
+		exit(1);
+	}
 
 	bool capturing = false;
 
@@ -103,13 +115,117 @@ void convert_file(xgcm_conf * conf, const char * path) {
 				}
 			}
 		}
+
 		if (fread(read_buffer, sizeof(char), 1, raw_file)) {
 			fseek(raw_file, -TAG_LENGTH, SEEK_CUR);
 		}
 	}
+	if (write_buffer.len > 0) {
+		buffer_write(&write_buffer, out_file);
+	}
 
 	fclose(raw_file);
-	fclose(out_file);
 
+	//copy from temp to output if make_temp_files, removing anything there.
+	if (conf->make_temp_files) {
+		char * final_path = get_output_path(conf, path);
+
+		d_printf("copying file from '%s' to '%s'\n",
+			output_path, final_path);
+
+		FILE *final_file;
+		if ((final_file = fopen(final_path, "w")) == NULL) {
+			char * errmsg = malloc(200);
+			sprintf(errmsg, "failed to open file '%s' for writing", path);
+			perror(errmsg);
+			exit(1);
+		}
+
+		fseek(out_file, 0, SEEK_SET);
+
+		int read_count;
+		char buf[128];
+		while((read_count = fread(&buf,sizeof(char), 128, out_file)) > 0){
+			fwrite(&buf, sizeof(char), read_count, final_file);
+		}
+		fclose(final_file);
+	}
+
+
+	fclose(out_file);
 	free(output_path);
+}
+
+
+char * get_input_path(xgcm_conf * conf, const char * in_path) {
+    if (path_endswith(in_path, conf->file_extension)) {
+    	char * m = malloc(sizeof(char) * (strlen(in_path) + 1));
+    	strcpy(m, in_path);
+        return m;
+    } else {
+    	char * m = malloc(sizeof(char) * 
+    		(strlen(in_path) + strlen(conf->file_extension) + 2));
+    	strcpy(m, in_path);
+    	strcat(m, ".");
+    	strcat(m, conf->file_extension);
+        return m;
+    }
+}
+
+
+char * get_writing_path(xgcm_conf * conf, const char * in_path) {
+	if (conf->make_temp_files) {
+		char * basepath = malloc(strlen(conf->tempdir_path) + 9);
+		strcpy(basepath, conf->tempdir_path);
+		strcat(basepath, "temp_");
+
+		char * path = malloc(sizeof(char) * strlen(basepath) + 4);
+		strcpy(path, basepath);
+		int i;
+		struct stat fstat;
+		for(i=0; i<1000; i++) {
+			char numstr[15];
+			sprintf(numstr, "%d", i);
+			if ( 0 > lstat(path, &fstat) ) {
+				strcat(path,numstr);
+				df_printf("temp file %s\n", path);
+				return path;
+			}
+		}
+		fprintf(stderr, "tmp/xgcm/temp_0 through temp_999 already exist.\n");
+		exit(1);
+	} else{
+		return get_input_path(conf, in_path);
+	}
+}
+
+char * get_output_path(xgcm_conf * conf, const char * in_path) {
+    if (path_endswith(in_path, conf->file_extension)) {
+        return extless_path(in_path);
+    } else{
+    	char * m = malloc(sizeof(char) * (strlen(in_path) + 1));
+    	strcpy(m, in_path);
+        return m;
+    }
+}
+
+void mk_temp_dir(xgcm_conf * conf) {
+	struct stat fstat;
+
+	// if file does not exist, make it
+	if ( 0 > stat(conf->tempdir_path, &fstat) ) {
+		d_printf("directory '%s' not found, creating\n",
+			conf->tempdir_path);
+		if (0 > mkdir(conf->tempdir_path, 0700)) {
+			perror("error creating directory\n");
+		}
+		return;
+	}
+
+	// if file exists, check if it is folder. else throw error and exit.
+	if (S_IFDIR != (fstat.st_mode & S_IFMT)) {
+		df_printf("temporary directory path '%s' exists and is not directory\n",
+			conf->tempdir_path);
+		exit(1);
+	}
 }

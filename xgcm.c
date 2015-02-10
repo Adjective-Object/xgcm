@@ -68,22 +68,24 @@ void initialize_long_opts() {
 
 void handle_option(xgcm_conf *c, char option) {
     switch(option) {
-        case 'v':
+        case 'v': // is verbose
             c->verbose = true;
             break;
-        case 'l':
+        case 'l': // follow symlinks
             c->follow_symlinks = true;
             break;
-        case 'r':
+        case 'r': // recursive directory search
             c->recursive = true;
             break;
         case 'c': // config
             CONFIG_FILE = optarg;
             break;
-        case 'f':
+        case 'f': // file extensions
             c->file_extension = optarg;
             break;
-        default:
+        case 'i': // in place editing (instead of temp)
+            c->make_temp_files = false;
+        default: // WHOOPS
             print_helptext();
             exit(1);
     }
@@ -96,7 +98,6 @@ int main(int argc, char **argv) {
     initialize_long_opts();
 
     xgcm_configuration conf;
-    conf.file_extension = "xgcm";
     build_default_config(&conf);
 
     // looks for '--conf in the options' 

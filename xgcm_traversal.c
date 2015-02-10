@@ -21,8 +21,9 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 	//check if file exists
 	struct stat fstat;
 	if ( 0 > lstat(path, &fstat) ) {
-		df_printf( 
-		"error: file %s does not exist\n", path);
+		fprintf(
+			stderr, 
+			"file %s does not exist, skipping\n", path);
 		free(path);
 	}
 	else {
@@ -79,33 +80,6 @@ void scan_directory(xgcm_conf * conf, const char * path) {
 	} else{
 		df_printf( "cannot open directory %s", path);
 	}
-}
-
-
-char * get_input_path(xgcm_conf * conf, const char * in_path) {
-    if (path_endswith(in_path, conf->file_extension)) {
-    	char * m = malloc(sizeof(char) * (strlen(in_path) + 1));
-    	strcpy(m, in_path);
-        return m;
-    } else{
-    	char * m = malloc(sizeof(char) * 
-    		(strlen(in_path) + strlen(conf->file_extension) + 2));
-    	strcpy(m, in_path);
-    	strcat(m, ".");
-    	strcat(m, conf->file_extension);
-        return m;
-    }
-}
-
-
-char * get_output_path(xgcm_conf * conf, const char * in_path) {
-    if (path_endswith(in_path, conf->file_extension)) {
-        return extless_path(in_path);
-    } else{
-    	char * m = malloc(sizeof(char) * (strlen(in_path) + 1));
-    	strcpy(m, in_path);
-        return m;
-    }
 }
 
 char * extless_path(const char * original_path) {

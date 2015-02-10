@@ -1,8 +1,6 @@
-# XGCM 
-A simple Global Config Manager
+# XGCM  ![ayy lmao][eyy-lmao]
 
-Warning! This tool is fresh out of the oven and too hot to eat! 
-Watch the repo for upcoming stable updates
+A simple Global Config Manager
 
 ##About
 
@@ -18,4 +16,11 @@ please read [the style guide](STYLE.md) before contributing.
 
 ## Usage 
 
-TODO: fill out the usage section of the README doc (๑•﹏•)
+
+
+
+
+
+
+[eyy-lmao]: https://img.shields.io/badge/eyy-lmao-00A388.svg?style=flat-square
+[alien]: http://i3.kym-cdn.com/entries/icons/original/000/014/178/alien.jpg

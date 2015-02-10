@@ -23,16 +23,21 @@ typedef struct __attribute__((__packed__)) relation_node {
 
 typedef struct  xgcm_configuration {
 	int version;
-	node * files;
-	node * files_tail;
-	hmap * relations;
+
 	bool recursive;
 	bool follow_symlinks;
 	bool verbose;
+	bool make_temp_files;
+	
+	char * tempdir_path;
 	char * file_extension;
+	
+	node * files;
+	node * files_tail;
+	hmap * relations;
 } xgcm_configuration;
-
 typedef xgcm_configuration xgcm_conf;
+
 
 int handle_ini(
     void * void_conf, const char * section, 
@@ -49,5 +54,6 @@ void add_file(xgcm_configuration * conf, const char * value);
 void add_relation(xgcm_configuration * conf, 
         const char * key, const char * value);
 
+void print_conf(xgcm_configuration * conf, char * context);
 
 #endif

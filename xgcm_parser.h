@@ -12,6 +12,12 @@
 
 void convert_file(xgcm_conf * conf, const char * path);
 
+char * get_input_path(xgcm_conf * conf, const char * in_path);
+char * get_output_path(xgcm_conf * conf, const char * in_path);
+char * get_writing_path(xgcm_conf * conf, const char * in_path);
+
+void mk_temp_dir(xgcm_conf *conf);
+
 #define FBUFLEN 255
 #define CAPTURE_BUF_LEN 1024
 #define WRITE_BUF_LEN 1024
