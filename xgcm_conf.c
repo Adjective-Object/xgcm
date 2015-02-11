@@ -68,8 +68,6 @@ void build_default_config(xgcm_configuration * conf){
     char * defext = "xgcm";
     conf->file_extension = malloc(sizeof(char) * (strlen(defext) + 1));
     strcpy(conf->file_extension, defext);
-
-    print_conf(conf, "init");
 }
 
 
@@ -130,7 +128,7 @@ void print_files(node * head){
 void add_relation(
         xgcm_configuration * conf, 
         const char * key, const char * value) {
-    hmap_insert (conf->relations, key, value, strlen(value) + 1);
+    hmap_append_str (conf->relations, key, value, strlen(value) + 1, ' ');
 }
 
 char * next_path(xgcm_configuration * conf) {

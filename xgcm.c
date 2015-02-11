@@ -8,6 +8,7 @@
 #include "xgcm_conf.h"
 #include "ini/ini.h"
 
+
 #define d_printf(...) if (conf.verbose) {printf(__VA_ARGS__);}
 #define df_printf(...) if (conf.verbose) {fprintf(stderr,__VA_ARGS__);}
 
@@ -119,6 +120,13 @@ int main(int argc, char **argv) {
         handle_option(&conf, option);
     }
 
+
+    if (conf.verbose){
+        print_conf(&conf, "init");
+        printf("\nfound relations: \n");
+        hmap_disp(conf.relations);
+        printf("\n");
+    }
 
 
     // if no file targers specified, default to the targets loaded from

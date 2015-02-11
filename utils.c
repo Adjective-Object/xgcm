@@ -90,3 +90,20 @@ char * strip_string_whitespace(const char * str) {
 
     return newstr;
 }
+
+
+int TABS = 0;
+void pdepth(FILE * stream){
+    int i;
+    for (i=0; i<TABS; i++){
+        fprintf(stream, "  ");
+    }
+}
+
+void tabup() {
+    TABS++;
+}
+
+void tabdown() {
+    TABS--;
+}

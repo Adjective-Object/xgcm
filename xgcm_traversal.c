@@ -13,9 +13,12 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 
-	printf("\nrawpath: %s\n", rawpath);
+void convert_by_path(xgcm_conf * conf, const char * rawpath) {
+	pdepth(stdout);
+	printf("> %s\n", rawpath);
+
+
 	char * path = get_input_path(conf, rawpath);
 
 	//check if file exists
@@ -27,7 +30,6 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 		free(path);
 	}
 	else {
-
 		// is symlink 
 		if (S_IFLNK == (fstat.st_mode & S_IFMT) && conf->follow_symlinks) {
 			d_printf("traversing symlink...\n");
@@ -35,25 +37,31 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 			char * path_buf = 
 				malloc(PATH_BUF_LEN);
 
-			if (-1 != readlink(path, path_buf, PATH_BUF_LEN)) {
+			if (readlink(path, path_buf, PATH_BUF_LEN)) {
 				df_printf( "error reading symlink %s\n", path);
 				return;
 			}
 
-			convert_by_path(conf, path_buf);
+			if (convert_file(conf, path_buf)){
+				fprintf(stderr, "error parsing file '%s'\n", path_buf);
+			}
 			free(path_buf);
 			return;
 		}
 
 		// is file
 		else if (S_IFREG == (fstat.st_mode & S_IFMT)) {
-			convert_file(conf, path);
+			if (convert_file(conf, path)) {
+				fprintf(stderr, "error parsing file '%s'\n", path);
+			}
 			return;
 		} 
 		
 		// is directory
 		else if (S_IFDIR == (fstat.st_mode & S_IFMT)) {
+			tabup();
 			scan_directory(conf, path);
+			tabdown();
 			return;
 		}
 
@@ -73,7 +81,12 @@ void scan_directory(xgcm_conf * conf, const char * path) {
 	if (dp != NULL) {
 		while( (ep = readdir(dp)) ) {
 			if (path_endswith(ep->d_name, conf->file_extension)) {
-				convert_file(conf, ep->d_name);
+				pdepth(stdout);
+				printf("> %s\n", ep->d_name);
+
+				if (convert_file(conf, ep->d_name)){
+					fprintf(stderr, "error parsing file '%s'\n", ep->d_name);
+				}
 			}
 
 		}

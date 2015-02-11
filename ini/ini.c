@@ -65,6 +65,7 @@ int ini_parse_file(FILE* file,
                    void* user)
 {
     /* Uses a fair bit of stack (use heap instead if you need to) */
+    int definition_indent = -1;
 #if INI_USE_STACK
     char line[INI_MAX_LINE];
 #else
@@ -105,9 +106,9 @@ int ini_parse_file(FILE* file,
             /* Per Python ConfigParser, allow '#' comments at start of line */
         }
 #if INI_ALLOW_MULTILINE
-        else if (*prev_name && *start && start > line) {
-            /* Non-black line with leading whitespace, treat as continuation
-               of previous name's value (as per Python ConfigParser). */
+        else if (*prev_name && *start && (start - line > definition_indent) ) {
+            /* Non-black line with more whitespaces than the definitoon line.,
+                treat as continuation of previous name's value */
             if (!handler(user, section, prev_name, start) && !error)
                 error = lineno;
         }
@@ -128,6 +129,7 @@ int ini_parse_file(FILE* file,
         else if (*start && *start != ';') {
             /* Not a comment, must be a name[=:]value pair */
             end = find_char_or_comment(start, '=');
+            definition_indent = (start - line);
             if (*end != '=') {
                 end = find_char_or_comment(start, ':');
             }

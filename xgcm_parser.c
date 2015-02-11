@@ -14,11 +14,15 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-void convert_file(xgcm_conf * conf, const char * path) {
+int convert_file(xgcm_conf * conf, const char * path) {
+	tabup();
 	fflush(stdout);
 	char * output_path = get_writing_path(conf, path);
-	d_printf("  processing file '%s' -> '%s'\n", 
+	d_pdepth(stdout);
+	d_printf("processing file '%s' -> '%s'\n", 
 		path, output_path);
+
+	tabup();
 
 	mk_temp_dir(conf);
 
@@ -27,13 +31,16 @@ void convert_file(xgcm_conf * conf, const char * path) {
 		char * errmsg = malloc(200);
 		sprintf(errmsg, "open file '%s' for reading", path);
 		perror(errmsg);
-		exit(1);
+		free(errmsg);
+		return 1;
 	}
 	if ((out_file = fopen(output_path, "w+")) == NULL) {
 		char * errmsg = malloc(200);
 		sprintf(errmsg, "open file '%s' for writing", output_path);
 		perror(errmsg);
-		exit(1);
+		free(errmsg);
+		fclose(raw_file);
+		return 1;
 	}
 
 	bool capturing = false;
@@ -59,9 +66,13 @@ void convert_file(xgcm_conf * conf, const char * path) {
 			}
 			if (0 == memcmp(&read_buffer[i], STARTING_TAG, TAG_LENGTH)) {
 				if (capturing) {
-					df_printf( "syntax error line %d\n", n_lines);
-					df_printf( "\t cannot open tag over existing open tag");
-					exit(1);
+					df_printf( 
+						"parse error line %d\n of '%s':\n",
+						n_lines, path);
+					df_printf("\t cannot open tag over existing open tag");
+					fclose(raw_file);
+					fclose(out_file);
+					return 1;
 				} else {
 					//switch to capturing, dump write buffer to disk
 					capturing = true;
@@ -72,26 +83,35 @@ void convert_file(xgcm_conf * conf, const char * path) {
 
 			} else if (0 == memcmp(&read_buffer[i], ENDING_TAG, 2)) {
 				if (!capturing) {
-					df_printf( "syntax error line %d\n", n_lines);
-					df_printf( 
+					df_printf("parse error line %d\n of '%s':\n",
+						n_lines, path);
+					df_printf(
 						"\t cannot close tag when tag has not been opened");
-					exit(1);
+					fclose(raw_file);
+					fclose(out_file);
+					return 1;
+
 				} else{
 					// switch to writing
 					capturing = false;
 					i+=TAG_LENGTH_MINUS_ONE;
 					// check if value in config map, else write the 
 					// captured text to buffer
-					d_printf("    capture \'%s\'\n",
+					d_pdepth(stdout);
+					d_printf("capture \'%s\'\n",
 						capture_buffer.content);
 					char * relbuf = get_relation(conf, capture_buffer.content);
 					if (relbuf) {
 						fwrite(relbuf, sizeof(char), strlen(relbuf), out_file);
 					} else {
-						df_printf( 
+						tabup();
+						pdepth(stderr);
+						fprintf(
+							stderr,
 							"cannot find entry for key \'%s\'\n",
 							capture_buffer.content);
 						buffer_write(&capture_buffer, out_file);
+						tabdown();
 					}
 					buffer_clear(&capture_buffer);
 
@@ -99,18 +119,39 @@ void convert_file(xgcm_conf * conf, const char * path) {
 			} else{
 				// adding to buffer if capturing
 				if(capturing) {
-					// put in capture buffer
+					// 
+					if(capture_buffer.len == CAPTURE_BUF_LEN){
+						df_printf("parse error line %d\n of '%s':\n",
+							n_lines, path);
+						df_printf("capture exceedes maximum buffer length\n");
+						df_printf(capture_buffer.content);
+						df_printf("\n");	
+						fclose(raw_file);
+						fclose(out_file);
+						return 1;
+					}
+					// put item in capture buffer
 					if (!buffer_putc(&capture_buffer, read_buffer[i])) {
-						df_printf( "parse error line %d\n", n_lines);
+						df_printf("parse error line %d\n of '%s':\n",
+							n_lines, path);
 						df_printf( "\tcaptured text is greater than maximum capture_buffer size (%d)", CAPTURE_BUF_LEN);
-						exit(1);
+						fclose(raw_file);
+						fclose(out_file);
+						return 1;
 					}
 				} else {
-					// put in write buffer
+					// dump the write buffer if it is too large
+					if(write_buffer.len == WRITE_BUF_LEN){
+						buffer_write(&write_buffer, out_file);
+						buffer_clear(&write_buffer);
+					}
+					// put item in write buffer
 					if (!buffer_putc(&write_buffer, read_buffer[i])) {
 						df_printf( "parse error line %d\n", n_lines);
 						df_printf( "\tcaptured text is greater than maximum write_buffer size (%d)", WRITE_BUF_LEN);
-						exit(1);
+						fclose(raw_file);
+						fclose(out_file);
+						return 1;
 					}
 				}
 			}
@@ -154,11 +195,23 @@ void convert_file(xgcm_conf * conf, const char * path) {
 
 	fclose(out_file);
 	free(output_path);
+	tabdown();
+	tabdown();
+	return 0;
 }
 
 
 char * get_input_path(xgcm_conf * conf, const char * in_path) {
-    if (path_endswith(in_path, conf->file_extension)) {
+
+	//check if file exists and if it is a directory
+	struct stat fstat;
+	bool isDir = false;
+	if (0 == lstat(in_path, &fstat) && (S_IFDIR == (fstat.st_mode & S_IFMT))) {
+		isDir = true;
+	}
+
+
+    if (isDir || path_endswith(in_path, conf->file_extension) ) {
     	char * m = malloc(sizeof(char) * (strlen(in_path) + 1));
     	strcpy(m, in_path);
         return m;
@@ -192,7 +245,7 @@ char * get_writing_path(xgcm_conf * conf, const char * in_path) {
 				return path;
 			}
 		}
-		fprintf(stderr, "tmp/xgcm/temp_0 through temp_999 already exist.\n");
+		df_printf("tmp/xgcm/temp_0 through temp_999 already exist.\n");
 		exit(1);
 	} else{
 		return get_input_path(conf, in_path);
