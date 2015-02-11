@@ -31,6 +31,7 @@ typedef struct  xgcm_configuration {
 	
 	char * tempdir_path;
 	char * file_extension;
+	char * multiline_divider;
 	
 	node * files;
 	node * files_tail;

@@ -115,7 +115,7 @@ char * extless_path(const char * original_path) {
     int sublen = (int)(last_dot - original_path);
     char * out_path = malloc(sublen);
     memcpy(out_path, original_path, sublen);
-    out_path[sublen+1] = '\0';
+    out_path[sublen] = '\0';
 
     return out_path;
 }

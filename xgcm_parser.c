@@ -48,7 +48,7 @@ int convert_file(xgcm_conf * conf, const char * path) {
 	// solve the 'split tamplate tags' problem by prepending some number of 
 	// characters from the previous read to the current one
 	char read_buffer[FBUFLEN];
-	int i, readsize, n_lines = 0;
+	int i, readsize, n_lines = 1;
 	
 	sbuffer capture_buffer, write_buffer;
 	buffer_init(&capture_buffer, CAPTURE_BUF_LEN);
@@ -108,7 +108,8 @@ int convert_file(xgcm_conf * conf, const char * path) {
 						pdepth(stderr);
 						fprintf(
 							stderr,
-							"cannot find entry for key \'%s\'\n",
+							"line %d: cannot find entry for key \'%s\'\n",
+							n_lines,
 							capture_buffer.content);
 						buffer_write(&capture_buffer, out_file);
 						tabdown();
@@ -158,7 +159,7 @@ int convert_file(xgcm_conf * conf, const char * path) {
 		}
 
 		if (fread(read_buffer, sizeof(char), 1, raw_file)) {
-			fseek(raw_file, -TAG_LENGTH, SEEK_CUR);
+			fseek(raw_file, -TAG_LENGTH+1, SEEK_CUR);
 		}
 	}
 	if (write_buffer.len > 0) {
@@ -190,6 +191,7 @@ int convert_file(xgcm_conf * conf, const char * path) {
 			fwrite(&buf, sizeof(char), read_count, final_file);
 		}
 		fclose(final_file);
+		remove(output_path);
 	}
 
 
@@ -228,24 +230,25 @@ char * get_input_path(xgcm_conf * conf, const char * in_path) {
 
 char * get_writing_path(xgcm_conf * conf, const char * in_path) {
 	if (conf->make_temp_files) {
-		char * basepath = malloc(strlen(conf->tempdir_path) + 9);
-		strcpy(basepath, conf->tempdir_path);
-		strcat(basepath, "temp_");
+		int baselen = strlen(conf->tempdir_path) ;
+		char * path = malloc(sizeof(char) * baselen + 4);
+		strcpy(path, conf->tempdir_path);
 
-		char * path = malloc(sizeof(char) * strlen(basepath) + 4);
-		strcpy(path, basepath);
 		int i;
 		struct stat fstat;
 		for(i=0; i<1000; i++) {
-			char numstr[15];
+			
+			char numstr[4];
 			sprintf(numstr, "%d", i);
+			strcpy(path + baselen, numstr);
+			
 			if ( 0 > lstat(path, &fstat) ) {
-				strcat(path,numstr);
 				df_printf("temp file %s\n", path);
 				return path;
 			}
 		}
-		df_printf("tmp/xgcm/temp_0 through temp_999 already exist.\n");
+		df_printf("%s0 through %s999 already exist.\n",
+			conf->tempdir_path, conf->tempdir_path);
 		exit(1);
 	} else{
 		return get_input_path(conf, in_path);

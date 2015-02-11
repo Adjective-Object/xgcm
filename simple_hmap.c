@@ -74,46 +74,56 @@ int hmap_insert(hmap * h, const char * key, const void * value, size_t payload_s
 
 // inserts something into a hashmap
 // if the hashmap already contains a value for that key, strcat it , appending 0
-int hmap_append_str(hmap * h, const char * key, const char * value, size_t payload_size, char divider) {
+int hmap_append_str(
+		hmap * h, 
+		const char * key, 
+		const char * value, 
+		const char * divider) {
+
+
+	int vallen = strlen(value);
 	int hash = hmap_hash(h,key);
 	node * head = h->nodes[hash];
-	node * new_node = hmap_init_node(key, value, payload_size);
+	node * new_node = hmap_init_node(key, value, vallen + 1);
+	
 
 	if (h->nodes[hash] == NULL) {
 		h->nodes[hash] = new_node;
 		return 1;
-	} else {
+	} 
+	else {
 
+		node * prev = head;
 		while(head != NULL) {
 			if (0 == strcmp(key, head->key)) {
-				int new_size = strlen(head->value) + payload_size + 1;
-				
+
+				int divlen = strlen(divider);
+				int new_size = head->payload_size + vallen + divlen;
+
 				char * new_value = malloc(sizeof(char) * new_size);
 				memcpy(
 					new_value, 
 					head->value, 
-					head->payload_size - 1);
-				memcpy(
+					head->payload_size -1 );
+				strcpy(
 					new_value + head->payload_size - 1 , 
-					&divider, 
-					1);
-				memcpy(
-					new_value + head->payload_size, 
-					value, 
-					payload_size);
+					divider);
+				strcpy(
+					new_value + head->payload_size - 1 + divlen, 
+					value);
 				
 				free(head->value);
 				head->value = new_value;
 				head->payload_size = new_size;
 				return 0;
 			} else {
+				prev = head;
 				head = head->next;
 			}
 		}
-
-		head->next = new_node;
-		return 1;
-	}	
+	prev->next = new_node;
+	return 1;
+	}
 }
 
 void * hmap_lookup(hmap *h, const char * key) {

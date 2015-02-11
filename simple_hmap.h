@@ -22,7 +22,11 @@ node * hmap_init_node(const char * key, const void * value, size_t payload_size)
 void hmap_init(hmap * h, size_t size);
 
 int hmap_insert(hmap * h, const char * key, const void * value, size_t payload_size);
-int hmap_append_str(hmap * h, const char * key, const char * value, size_t payload_size, char divider);
+int hmap_append_str(
+		hmap * h, 
+		const char * key, 
+		const char * value, 
+		const char * divider);
 void * hmap_lookup(hmap * h, const char * key);
 
 int hmap_hash(hmap * h, const char * key);

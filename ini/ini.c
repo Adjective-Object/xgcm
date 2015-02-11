@@ -20,6 +20,16 @@ http://code.google.com/p/inih/
 #define MAX_SECTION 50
 #define MAX_NAME 50
 
+static char * strip_quotes(char *s){
+    int len = strlen(s);
+    if (s[0] == '"' && s[len - 1] == '"'){
+            s[len - 1] = '\0';
+            // printf ("%s\n", s+1);
+            return s + 1;
+    }
+    return s;
+}
+
 /* Strip whitespace chars off end of given string, in place. Return s. */
 static char* rstrip(char* s)
 {
@@ -109,6 +119,7 @@ int ini_parse_file(FILE* file,
         else if (*prev_name && *start && (start - line > definition_indent) ) {
             /* Non-black line with more whitespaces than the definitoon line.,
                 treat as continuation of previous name's value */
+            start = strip_quotes(start);
             if (!handler(user, section, prev_name, start) && !error)
                 error = lineno;
         }
@@ -144,6 +155,7 @@ int ini_parse_file(FILE* file,
 
                 /* Valid name[=:]value pair found, call handler */
                 strncpy0(prev_name, name, sizeof(prev_name));
+                value = strip_quotes(value);
                 if (!handler(user, section, name, value) && !error)
                     error = lineno;
             }
