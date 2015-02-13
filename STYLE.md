@@ -18,6 +18,5 @@
 The only hard rules are:
 
 - indent using spaces
-- methods returning a new address in memory should begin with the word "create"
-- 
+- methods returning a new address in memory should begin with the word "create" 
 - swag harder than you swig
