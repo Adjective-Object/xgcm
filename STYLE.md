@@ -8,7 +8,7 @@
 - **utils.c**: general purpose utility functions which are
 	not intrinsically tied to xgcm
 
-- **xgc_traversal.c**: Traverse specified paths to find files to parse
+- **xgcm_traversal.c**: Traverse specified paths to find files to parse
 - **xgcm_parser.c**: Parsing xgcm files and writing outputs
 - **xgcm_conf.c**: Configuration struct and opts parsing
 - **xgcm.c**: Launching, xgcm (routing input to conf and traversal)
