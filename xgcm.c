@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <wordexp.h>
 #include <stdbool.h>
 #include "xgcm_parser.h"
 #include "xgcm_conf.h"
@@ -15,7 +16,7 @@
 
 extern int optind;
 
-char * CONFIG_FILE = "~/.config/xgcm/xgcmrc";
+char * CONFIG_FILE_RAW = "~/.config/xgcm/xgcmrc";
 
 void print_helptext() {
     printf("helptext not written :L\n");
@@ -79,7 +80,7 @@ void handle_option(xgcm_conf *c, char option) {
             c->recursive = true;
             break;
         case 'c': // config
-            CONFIG_FILE = optarg;
+            CONFIG_FILE_RAW = optarg;
             break;
         case 'f': // file extensions
             c->file_extension = optarg;
@@ -104,15 +105,26 @@ int main(int argc, char **argv) {
     // looks for '--conf in the options' 
     char option;
     while ((option = getopt_long(argc, argv,"rvl:c:", long_opts, NULL)) != -1) {
-        if (option == 'c'){
+        if (option == 'c' || option == 'v'){
             handle_option(&conf, option);
         }
     }
 
+
+    char * CONFIG_FILE;
+    wordexp_t expand;
+    wordexp(CONFIG_FILE_RAW, &expand, 0);
+    CONFIG_FILE = expand.we_wordv[0];
+
+    d_printf("config file: '%s'\n", CONFIG_FILE);
+
     // load the configuration file, printing errors on failure
     if (ini_parse(CONFIG_FILE, handle_ini, &conf) < 0 ) {
-        df_printf("error loading the config file '%s'.\n", CONFIG_FILE);
+        fprintf(stderr, "error loading the config file '%s'.\n", CONFIG_FILE);
+        exit(1);
     }
+
+    wordfree(&expand);
 
     // read remaining options from getopt, overwriting the config file's options
     optind = 1;

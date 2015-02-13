@@ -167,11 +167,13 @@ int convert_file(xgcm_conf * conf, const char * path) {
 	}
 
 	fclose(raw_file);
+	tabdown();
 
 	//copy from temp to output if make_temp_files, removing anything there.
 	if (conf->make_temp_files) {
 		char * final_path = get_output_path(conf, path);
 
+		d_pdepth(stdout);
 		d_printf("copying file from '%s' to '%s'\n",
 			output_path, final_path);
 
@@ -197,7 +199,6 @@ int convert_file(xgcm_conf * conf, const char * path) {
 
 	fclose(out_file);
 	free(output_path);
-	tabdown();
 	tabdown();
 	return 0;
 }
@@ -230,9 +231,10 @@ char * get_input_path(xgcm_conf * conf, const char * in_path) {
 
 char * get_writing_path(xgcm_conf * conf, const char * in_path) {
 	if (conf->make_temp_files) {
-		int baselen = strlen(conf->tempdir_path) ;
+		int baselen = strlen(conf->tempdir_path) + strlen(conf->tempfile_prefix);
 		char * path = malloc(sizeof(char) * baselen + 4);
 		strcpy(path, conf->tempdir_path);
+		strcat(path, conf->tempfile_prefix);
 
 		int i;
 		struct stat fstat;

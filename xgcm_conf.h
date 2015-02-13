@@ -25,11 +25,13 @@ typedef struct  xgcm_configuration {
 	int version;
 
 	bool recursive;
+	bool explore_hidden;
 	bool follow_symlinks;
 	bool verbose;
 	bool make_temp_files;
 	
 	char * tempdir_path;
+	char * tempfile_prefix;
 	char * file_extension;
 	char * multiline_divider;
 	

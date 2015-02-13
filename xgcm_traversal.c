@@ -22,8 +22,8 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 	char * path = get_input_path(conf, rawpath);
 
 	//check if file exists
-	struct stat fstat;
-	if ( 0 > lstat(path, &fstat) ) {
+	struct stat file_stat;
+	if ( 0 > lstat(path, &file_stat) ) {
 		fprintf(
 			stderr, 
 			"file %s does not exist, skipping\n", path);
@@ -31,7 +31,7 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 	}
 	else {
 		// is symlink 
-		if (S_IFLNK == (fstat.st_mode & S_IFMT) && conf->follow_symlinks) {
+		if (S_IFLNK == (file_stat.st_mode & S_IFMT) && conf->follow_symlinks) {
 			d_printf("traversing symlink...\n");
 
 			char * path_buf = 
@@ -50,7 +50,9 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 		}
 
 		// is file
-		else if (S_IFREG == (fstat.st_mode & S_IFMT)) {
+		else if (S_IFREG == (file_stat.st_mode & S_IFMT)) {
+			d_pdepth(stdout);
+			d_printf("    converting..\n");
 			if (convert_file(conf, path)) {
 				fprintf(stderr, "error parsing file '%s'\n", path);
 			}
@@ -58,7 +60,7 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 		} 
 		
 		// is directory
-		else if (S_IFDIR == (fstat.st_mode & S_IFMT)) {
+		else if (S_IFDIR == (file_stat.st_mode & S_IFMT)) {
 			tabup();
 			scan_directory(conf, path);
 			tabdown();
@@ -74,25 +76,43 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 }
 
 void scan_directory(xgcm_conf * conf, const char * path) {
-	DIR *dp;
 	struct dirent *ep;
-	dp = opendir(path);
+	DIR *dp = opendir(path);
 
 	if (dp != NULL) {
+		struct stat buf;
 		while( (ep = readdir(dp)) ) {
-			if (path_endswith(ep->d_name, conf->file_extension)) {
-				pdepth(stdout);
-				printf("> %s\n", ep->d_name);
+			char * newpath = malloc(strlen(ep->d_name) + strlen(path) + 2);
+			strcpy(newpath, path);
+			if(path[strlen(path) - 1] != '/'){
+				strcat(newpath, "/");
+			}
+			strcat(newpath, ep->d_name);
 
-				if (convert_file(conf, ep->d_name)){
-					fprintf(stderr, "error parsing file '%s'\n", ep->d_name);
+			if (0 > stat(newpath, &buf) ) {
+				df_printf("error getting stat of %s (%s)\n", 
+					ep->d_name,
+					newpath);
+			}
+			else if (S_IFREG == (buf.st_mode & S_IFMT)) {
+				if (path_endswith(ep->d_name, conf->file_extension)) {
+					convert_by_path(conf, newpath);
 				}
+			} else if (
+					S_IFDIR == (buf.st_mode & S_IFMT) &&
+					conf->recursive &&
+					(conf->explore_hidden || *ep->d_name != '.') &&
+					0 != strcmp(ep->d_name, "..") && 
+					0 != strcmp(ep->d_name, ".")) {
+				convert_by_path(conf, newpath);
 			}
 
+			free(newpath);
 		}
 	} else{
 		df_printf( "cannot open directory %s", path);
 	}
+	closedir(dp);
 }
 
 char * extless_path(const char * original_path) {

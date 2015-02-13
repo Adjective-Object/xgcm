@@ -20,7 +20,7 @@ please read [the style guide](STYLE.md) before contributing.
 
 ## Contributors
 
- Adjective-Object Maybe you?
+ Adjective-Object, Maybe you?
 
 
 

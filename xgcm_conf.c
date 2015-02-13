@@ -41,6 +41,9 @@ int handle_ini(
     }else if (MATCH("xgcm", "tempdir_path")) {
         conf->tempdir_path = malloc(sizeof(char) * strlen(value));
         strcpy(conf->tempdir_path, value);
+    }else if (MATCH("xgcm", "tempfile_prefix")) {
+        conf->tempfile_prefix = malloc(sizeof(char) * strlen(value));
+        strcpy(conf->tempfile_prefix, value);
     }
     else if (0 == strcmp("attributes", section)) {
         if (relations_header) {
@@ -63,6 +66,7 @@ void build_default_config(xgcm_configuration * conf){
     conf->version = 0;
 
     conf->recursive = true;
+    conf->explore_hidden = false;
     conf->follow_symlinks = false;
     conf->verbose = false;
     conf->make_temp_files = true;
@@ -74,9 +78,13 @@ void build_default_config(xgcm_configuration * conf){
     conf->relations = malloc(sizeof(hmap));
     hmap_init(conf->relations, 50);
 
-    char * deftemp = "/tmp/xgcm/temp_";
+    char * deftemp = "/tmp/xgcm/";
     conf->tempdir_path = malloc(sizeof(char) * (strlen(deftemp) + 1));
     strcpy(conf->tempdir_path, deftemp);
+
+    char * deftemppre = "temp_";
+    conf->tempfile_prefix = malloc(sizeof(char) * (strlen(deftemppre) + 1));
+    strcpy(conf->tempfile_prefix, deftemppre);
 
     char * defext = "xgcm";
     conf->file_extension = malloc(sizeof(char) * (strlen(defext) + 1));
@@ -117,8 +125,7 @@ void add_file(xgcm_configuration * conf, const char * rawpath) {
     wordexp(rawpath, &expand, 0);
     char * path = expand.we_wordv[0];
 
-    d_printf ("  + '%s'\n",
-            path);
+    d_printf ("  + '%s'\n", path);
 
     node * new_node = hmap_init_node(path, NULL, 0);
     if (conf->files_tail) {
