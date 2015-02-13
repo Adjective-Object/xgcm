@@ -21,6 +21,7 @@ int strbool(bool *b, const char * comp);
 
 bool path_endswith(const char * string, const char * ext);
 bool str_endswith(const char * string, const char * suffix);
+char * extless_path(const char * in_path);
 
 char * strip_string_whitespace(const char * str);
 

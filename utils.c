@@ -107,3 +107,28 @@ void tabup() {
 void tabdown() {
     TABS--;
 }
+
+char * extless_path(const char * original_path) {
+
+    int len = strlen(original_path) + 1;
+
+    // find the location of the point
+    const char * last_dot = NULL;
+    const char * tracer = original_path;
+    while (*tracer != '\0') {
+        if (*tracer =='.')
+            last_dot = tracer;
+        tracer++;
+    }
+
+    // if there was no period, set it to the end of the string
+    if (last_dot == NULL)
+        last_dot = original_path + len;
+
+    int sublen = (int)(last_dot - original_path);
+    char * out_path = malloc(sublen + 1);
+    memcpy(out_path, original_path, sublen);
+    out_path[sublen] = '\0';
+
+    return out_path;
+}

@@ -39,6 +39,12 @@ node * hmap_init_node(const char * key, const void * value, size_t payload_size)
 	return new_node;
 }
 
+void free_node(node * node){
+	free(node->value);
+	free(node->key);
+	free(node);
+}
+
 int hmap_hash(hmap * h, const char * key) {
 	int sum = 0;
 	for (;*key != '\0'; key++) {

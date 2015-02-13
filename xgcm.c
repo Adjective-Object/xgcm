@@ -155,18 +155,21 @@ int main(int argc, char **argv) {
         for (; 
                 path !=NULL; 
                 path = next_path(&conf)) {
+            printf("==%s\n", path);
             convert_by_path(&conf, path);
+            free(path);
         }
     }
     // else, parse the remaining arguments as either directories to traverse
     // or as paths of files to read
     else {
         for ( ;optind < argc; optind++) {
-            d_printf("%s\n", argv[optind]);
+            printf("==%s\n", argv[optind]);
             convert_by_path(&conf, argv[optind]);
         }
     }
     d_printf("\nfinished parsing\n");
+    teardown_config(&conf);
     // exit successfully
     return 0;
 }

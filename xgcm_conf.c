@@ -33,16 +33,16 @@ int handle_ini(
         return strbool(&(conf->verbose),value);
     }
     else if (MATCH("xgcm", "multiline_divider")) {
-        conf->multiline_divider = malloc(sizeof(char) * strlen(value));
+        conf->multiline_divider = malloc(sizeof(char) * strlen(value) + 1);
         strcpy(conf->multiline_divider, value);
     }else if (MATCH("xgcm", "file_extension")) {
-        conf->file_extension = malloc(sizeof(char) * strlen(value));
+        conf->file_extension = malloc(sizeof(char) * strlen(value) + 1);
         strcpy(conf->file_extension, value);
     }else if (MATCH("xgcm", "tempdir_path")) {
-        conf->tempdir_path = malloc(sizeof(char) * strlen(value));
+        conf->tempdir_path = malloc(sizeof(char) * strlen(value  + 1));
         strcpy(conf->tempdir_path, value);
     }else if (MATCH("xgcm", "tempfile_prefix")) {
-        conf->tempfile_prefix = malloc(sizeof(char) * strlen(value));
+        conf->tempfile_prefix = malloc(sizeof(char) * strlen(value) + 1);
         strcpy(conf->tempfile_prefix, value);
     }
     else if (0 == strcmp("attributes", section)) {
@@ -78,41 +78,44 @@ void build_default_config(xgcm_configuration * conf){
     conf->relations = malloc(sizeof(hmap));
     hmap_init(conf->relations, 50);
 
-    char * deftemp = "/tmp/xgcm/";
+    const char * deftemp = "/tmp/xgcm/";
     conf->tempdir_path = malloc(sizeof(char) * (strlen(deftemp) + 1));
     strcpy(conf->tempdir_path, deftemp);
 
-    char * deftemppre = "temp_";
+    const char * deftemppre = "temp_";
     conf->tempfile_prefix = malloc(sizeof(char) * (strlen(deftemppre) + 1));
     strcpy(conf->tempfile_prefix, deftemppre);
 
-    char * defext = "xgcm";
+    const char * defext = "xgcm";
     conf->file_extension = malloc(sizeof(char) * (strlen(defext) + 1));
     strcpy(conf->file_extension, defext);
 
-    char * defdivider = " ";
-    conf->multiline_divider = malloc(sizeof(char) * strlen(defdivider));
+    const char * defdivider = " ";
+    conf->multiline_divider = malloc(sizeof(char) * strlen(defdivider) + 1);
     strcpy(conf->multiline_divider, defdivider);
+}
 
+void teardown_config(xgcm_configuration * conf){
+    free(conf->relations);
+    free(conf->tempdir_path);
+    free(conf->tempfile_prefix);
+    free(conf->file_extension);
+    free(conf->multiline_divider);
 }
 
 
 
 void add_files(xgcm_configuration * conf, const char * files) {
-    printf("files:\n");
 
     char * buffer = malloc(strlen(files) + 1);
     memcpy(buffer, files, strlen(files) + 1);
     char * head = buffer;
     char * tail = buffer;
-    int i, len = strlen(files) + 1;
-    for(i=0; i<len; i++) {
-        head ++;
-        if (*head == ';' && tail) {
-            if (head != tail) {
-                *head = '\0';
-                add_file(conf, tail);
-            }
+    
+    for(; *head != '\0'; head++) {
+        if (*head == ';' && tail < head) {
+            *head = '\0';
+            add_file(conf, tail);
             tail = (char *)(head +1);
         }
     }
@@ -124,8 +127,6 @@ void add_file(xgcm_configuration * conf, const char * rawpath) {
     wordexp_t expand;
     wordexp(rawpath, &expand, 0);
     char * path = expand.we_wordv[0];
-
-    d_printf ("  + '%s'\n", path);
 
     node * new_node = hmap_init_node(path, NULL, 0);
     if (conf->files_tail) {
@@ -161,10 +162,11 @@ char * next_path(xgcm_configuration * conf) {
     if (conf->files == NULL) {
         return NULL;
     }
-    char * name = conf->files->key;
+    char * name = malloc(strlen(conf->files->key) + 1);
+    strcpy(name, conf->files->key);
     node * old_node = conf->files;
     conf->files = conf->files->next;
-    free(old_node);
+    free_node(old_node);
     return name;
 }
 

@@ -19,6 +19,7 @@ typedef struct hmap {
 
 
 node * hmap_init_node(const char * key, const void * value, size_t payload_size);
+void free_node(node *n);
 void hmap_init(hmap * h, size_t size);
 
 int hmap_insert(hmap * h, const char * key, const void * value, size_t payload_size);

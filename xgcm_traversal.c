@@ -15,8 +15,8 @@
 
 
 void convert_by_path(xgcm_conf * conf, const char * rawpath) {
-	pdepth(stdout);
-	printf("> %s\n", rawpath);
+	d_pdepth(stdout);
+	d_printf("> %s\n", rawpath);
 
 
 	char * path = get_input_path(conf, rawpath);
@@ -24,10 +24,7 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 	//check if file exists
 	struct stat file_stat;
 	if ( 0 > lstat(path, &file_stat) ) {
-		fprintf(
-			stderr, 
-			"file %s does not exist, skipping\n", path);
-		free(path);
+		df_printf("file %s does not exist, skipping\n", path);
 	}
 	else {
 		// is symlink 
@@ -51,8 +48,6 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 
 		// is file
 		else if (S_IFREG == (file_stat.st_mode & S_IFMT)) {
-			d_pdepth(stdout);
-			d_printf("    converting..\n");
 			if (convert_file(conf, path)) {
 				fprintf(stderr, "error parsing file '%s'\n", path);
 			}
@@ -71,8 +66,9 @@ void convert_by_path(xgcm_conf * conf, const char * rawpath) {
 		else {
 			df_printf( "unknown format, not parsing %s\n", path);
 		}
-
 	}
+
+	free(path);
 }
 
 void scan_directory(xgcm_conf * conf, const char * path) {
@@ -83,6 +79,7 @@ void scan_directory(xgcm_conf * conf, const char * path) {
 		struct stat buf;
 		while( (ep = readdir(dp)) ) {
 			char * newpath = malloc(strlen(ep->d_name) + strlen(path) + 2);
+			
 			strcpy(newpath, path);
 			if(path[strlen(path) - 1] != '/'){
 				strcat(newpath, "/");
@@ -112,30 +109,6 @@ void scan_directory(xgcm_conf * conf, const char * path) {
 	} else{
 		df_printf( "cannot open directory %s", path);
 	}
+
 	closedir(dp);
-}
-
-char * extless_path(const char * original_path) {
-
-    int len = strlen(original_path) + 1;
-
-    // find the location of the point
-    const char * last_dot = NULL;
-    const char * tracer = original_path;
-    while (*tracer != '\0') {
-        if (*tracer =='.')
-            last_dot = tracer;
-        tracer++;
-    }
-
-    // if there was no period, set it to the end of the string
-    if (last_dot == NULL)
-        last_dot = original_path + len;
-
-    int sublen = (int)(last_dot - original_path);
-    char * out_path = malloc(sublen);
-    memcpy(out_path, original_path, sublen);
-    out_path[sublen] = '\0';
-
-    return out_path;
 }

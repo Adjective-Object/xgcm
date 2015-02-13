@@ -14,7 +14,6 @@ char * path_with_output_ext(xgcm_conf * conf, const char * in_path);
 char * extless_path(const char * in_path);
 
 char * path_with_output_ext(xgcm_conf * conf, const char * in_path);
-char * extless_path(const char * in_path);
 
 
 #endif

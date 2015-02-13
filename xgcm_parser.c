@@ -21,9 +21,9 @@ int convert_file(xgcm_conf * conf, const char * path) {
 	d_pdepth(stdout);
 	d_printf("processing file '%s' -> '%s'\n", 
 		path, output_path);
+	printf("  %s\n", path);
 
 	tabup();
-
 	mk_temp_dir(conf);
 
 	FILE *raw_file, *out_file;
@@ -193,6 +193,7 @@ int convert_file(xgcm_conf * conf, const char * path) {
 			fwrite(&buf, sizeof(char), read_count, final_file);
 		}
 		fclose(final_file);
+		free(final_path);
 		remove(output_path);
 	}
 

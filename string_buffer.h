@@ -17,5 +17,6 @@ void buffer_init(sbuffer * b, int length);
 bool buffer_putc(sbuffer * b, char c);
 void buffer_clear(sbuffer * b);
 void buffer_write(sbuffer * b, FILE *f);
+void buffer_teardown(sbuffer * b);
 
 #endif

@@ -12,6 +12,10 @@ void buffer_init(sbuffer * b, int maxlen) {
     b->len = 0;
 }
 
+void buffer_teardown(sbuffer * b) {
+    free(b->content);
+}
+
 bool buffer_putc(sbuffer * b, char c){
     if (b->len >= b->maxlen)
         return false;
