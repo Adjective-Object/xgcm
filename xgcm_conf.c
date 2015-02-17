@@ -86,7 +86,7 @@ void enqueue_conf_file(const char * rawpath){
     char * wd = malloc(DIRLEN);
     getcwd(wd, DIRLEN);
 
-    printf("enqueing (%s) %s\n", wd, path);
+    //printf("enqueing (%s) %s\n", wd, path);
 
     ll_append(WORKING_DIRS, wd);
     ll_append(TO_PARSE, path);
@@ -96,9 +96,9 @@ void enqueue_conf_file(const char * rawpath){
 
 void parse_conf_files(xgcm_conf * conf) {
     char * oldpath = malloc(DIRLEN);
+    char * fullpath = malloc(DIRLEN);
 
     while(TO_PARSE->head != NULL) {
-
         if(conf->verbose) {
             printf("\nto_parse: ");
             ll_print(TO_PARSE);
@@ -114,21 +114,33 @@ void parse_conf_files(xgcm_conf * conf) {
         char * temp_path = ll_pop_head(WORKING_DIRS);
         chdir(temp_path);
 
-        char * shortname = chdir_to_parent(TO_PARSE->head->key);
+        char * shortname = chdir_to_parent(ll_pop_head(TO_PARSE));
 
-        // load the configuration file, printing errors on failure
-        if (ini_parse(shortname, handle_ini, conf) < 0 ) {
-            fprintf(stderr, 
-                "error loading the config file '%s'.\n", 
-                TO_PARSE->head->key);
-            exit(1);
+        getcwd(fullpath, DIRLEN);
+        strncat(fullpath, "/", DIRLEN);
+        strncat(fullpath,shortname, DIRLEN);
+
+        if (!(ll_contains(PARSED,fullpath))) {
+            // load the configuration file, printing errors on failure
+            // printf("processing '%s'\n", fullpath);
+            ll_append(PARSED, fullpath);
+
+            if (ini_parse(shortname, handle_ini, conf) < 0 ) {
+                fprintf(stderr, 
+                    "error loading the config file '%s'.\n", 
+                    TO_PARSE->head->key);
+                exit(1);
+            }
         }
-
-        ll_append(PARSED, ll_pop_head(TO_PARSE));
+        // else{
+        //     printf("already processed '%s' skipping\n", fullpath);
+        // }
 
         // change th current working directory back to the old directory
         chdir(oldpath);
     }
+    free(oldpath);
+    free(fullpath);
 }
 
 void build_default_config(xgcm_configuration * conf){
