@@ -2,13 +2,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <wordexp.h>
 #include "ini/ini.h"
 #include "simple_hmap.h"
 #include "utils.h"
 #include "xgcm_conf.h"
 
+ll * TO_PARSE;
+ll * WORKING_DIRS;
+ll * PARSED;
 
+void conf_init() {
+    WORKING_DIRS = ll_init();
+    TO_PARSE = ll_init();
+    PARSED = ll_init();
+}
 
 bool relations_header = true;
 int handle_ini(
@@ -44,6 +53,8 @@ int handle_ini(
     }else if (MATCH("xgcm", "tempfile_prefix")) {
         conf->tempfile_prefix = malloc(sizeof(char) * strlen(value) + 1);
         strcpy(conf->tempfile_prefix, value);
+    }else if (MATCH("xgcm", "include")) {
+        enqueue_conf_file(value);
     }
     else if (0 == strcmp("attributes", section)) {
         if (relations_header) {
@@ -60,6 +71,64 @@ int handle_ini(
         return 0;
     }
     return 1;
+}
+
+#define DIRLEN 4096
+void enqueue_conf_file(const char * rawpath){
+    if (0 == strcmp("", rawpath)) {
+        return;
+    }
+
+    wordexp_t expand;
+    wordexp(rawpath, &expand, 0);
+    char * path = expand.we_wordv[0];
+
+    char * wd = malloc(DIRLEN);
+    getcwd(wd, DIRLEN);
+
+    printf("enqueing (%s) %s\n", wd, path);
+
+    ll_append(WORKING_DIRS, wd);
+    ll_append(TO_PARSE, path);
+
+    wordfree(&expand);
+}
+
+void parse_conf_files(xgcm_conf * conf) {
+    char * oldpath = malloc(DIRLEN);
+
+    while(TO_PARSE->head != NULL) {
+
+        if(conf->verbose) {
+            printf("\nto_parse: ");
+            ll_print(TO_PARSE);
+            printf("working : ");
+            ll_print(WORKING_DIRS);
+            printf("\n");
+        }
+        
+        // change the current working directory to the parent directory of the
+        // current conf file, so that wordexps from the file will work properly
+        getcwd(oldpath, DIRLEN);
+
+        char * temp_path = ll_pop_head(WORKING_DIRS);
+        chdir(temp_path);
+
+        char * shortname = chdir_to_parent(TO_PARSE->head->key);
+
+        // load the configuration file, printing errors on failure
+        if (ini_parse(shortname, handle_ini, conf) < 0 ) {
+            fprintf(stderr, 
+                "error loading the config file '%s'.\n", 
+                TO_PARSE->head->key);
+            exit(1);
+        }
+
+        ll_append(PARSED, ll_pop_head(TO_PARSE));
+
+        // change th current working directory back to the old directory
+        chdir(oldpath);
+    }
 }
 
 void build_default_config(xgcm_configuration * conf){

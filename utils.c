@@ -1,6 +1,8 @@
+#include <stdbool.h>
+#include <wordexp.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+#include <unistd.h>
 #include <ctype.h>
 #include "utils.h"
 
@@ -131,4 +133,41 @@ char * extless_path(const char * original_path) {
     out_path[sublen] = '\0';
 
     return out_path;
+}
+
+char * chdir_to_parent(const char * rawpath) {
+    // TODO fix this to not be string trash and instead use stdio functions
+    // instead of yo mommaaa
+
+    wordexp_t expand;
+    wordexp(rawpath, &expand, 0);
+    char * path = expand.we_wordv[0];
+
+    char * parent_path = malloc(strlen(path));
+    strcpy(parent_path, path);
+    char * tracer = parent_path;
+    char * lastslash = parent_path;
+
+    while (*tracer != '\0') {
+        if (*tracer == '/')
+            lastslash = tracer;
+        tracer ++;
+    }
+
+    char * shortpath = malloc(strlen(lastslash));
+    strcpy(shortpath, lastslash + 1);
+
+    if (*lastslash == '/') {
+        *(lastslash + 1) = '\0';
+    } else {
+        fprintf(stderr, 
+            "bad path '%s' supplied to function 'chdir_to_parent'\n",
+            rawpath);
+        exit(1);
+    }
+
+    chdir(parent_path);
+    wordfree(&expand);
+
+    return shortpath;
 }

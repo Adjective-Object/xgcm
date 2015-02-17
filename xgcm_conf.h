@@ -41,6 +41,11 @@ typedef struct  xgcm_configuration {
 typedef xgcm_configuration xgcm_conf;
 
 
+void conf_init();
+void enqueue_conf_file(const char * rawpath);
+void parse_conf_files();
+
+
 int handle_ini(
     void * void_conf, const char * section, 
     const char * name, const char * value);

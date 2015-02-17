@@ -16,7 +16,7 @@
 
 extern int optind;
 
-char * CONFIG_FILE_RAW = "~/.config/xgcm/xgcmrc";
+char * CONFIG_FILES_RAW = "~/.config/xgcm/xgcmrc";
 
 void print_helptext() {
     printf("helptext not written :L\n");
@@ -80,7 +80,7 @@ void handle_option(xgcm_conf *c, char option) {
             c->recursive = true;
             break;
         case 'c': // config
-            CONFIG_FILE_RAW = optarg;
+            CONFIG_FILES_RAW = optarg;
             break;
         case 'f': // file extensions
             c->file_extension = optarg;
@@ -110,21 +110,20 @@ int main(int argc, char **argv) {
         }
     }
 
+    // traverse the linked list of config files in reverse order, parsing all
+    conf_init();
 
-    char * CONFIG_FILE;
-    wordexp_t expand;
-    wordexp(CONFIG_FILE_RAW, &expand, 0);
-    CONFIG_FILE = expand.we_wordv[0];
-
-    d_printf("config file: '%s'\n", CONFIG_FILE);
-
-    // load the configuration file, printing errors on failure
-    if (ini_parse(CONFIG_FILE, handle_ini, &conf) < 0 ) {
-        fprintf(stderr, "error loading the config file '%s'.\n", CONFIG_FILE);
-        exit(1);
+    ll * cfiles = ll_init();
+    ll_from_string(cfiles, CONFIG_FILES_RAW, ';');
+    
+    printf("config files:\n");
+    while (cfiles->head != NULL) {
+        char * rawpath = ll_pop_head(cfiles);
+        printf("rawpath = %p\n", rawpath);
+        enqueue_conf_file(rawpath);
     }
+    parse_conf_files(&conf);
 
-    wordfree(&expand);
 
     // read remaining options from getopt, overwriting the config file's options
     optind = 1;

@@ -25,4 +25,6 @@ char * extless_path(const char * in_path);
 
 char * strip_string_whitespace(const char * str);
 
+char * chdir_to_parent(const char * rawpath);
+
 #endif
