@@ -4,21 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-typedef struct __attribute__((__packed__)) node {
-	struct node * next;
-	char * key;
-	size_t payload_size;
-	void * value;
-} node;
+#include "simple_ll.h"
 
 typedef struct hmap {
 	int size;
-	node * nodes;
+	node ** nodes;
 } hmap;
 
-
-node * hmap_init_node(const char * key, const void * value, size_t payload_size);
 void free_node(node *n);
 void hmap_init(hmap * h, size_t size);
 

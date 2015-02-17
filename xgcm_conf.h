@@ -35,8 +35,7 @@ typedef struct  xgcm_configuration {
 	char * file_extension;
 	char * multiline_divider;
 	
-	node * files;
-	node * files_tail;
+	ll * files;
 	hmap * relations;
 } xgcm_configuration;
 typedef xgcm_configuration xgcm_conf;
@@ -54,6 +53,7 @@ char * get_relation(xgcm_configuration * conf, const char * relation);
 
 void add_files(xgcm_configuration * conf, const char * files);
 void add_file(xgcm_configuration * conf, const char * value);
+void expand_file(node * to_expand);
 void add_relation(xgcm_configuration * conf, 
         const char * key, const char * value);
 

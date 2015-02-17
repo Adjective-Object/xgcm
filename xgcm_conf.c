@@ -39,7 +39,7 @@ int handle_ini(
         conf->file_extension = malloc(sizeof(char) * strlen(value) + 1);
         strcpy(conf->file_extension, value);
     }else if (MATCH("xgcm", "tempdir_path")) {
-        conf->tempdir_path = malloc(sizeof(char) * strlen(value  + 1));
+        conf->tempdir_path = malloc(sizeof(char) * strlen(value)  + 1);
         strcpy(conf->tempdir_path, value);
     }else if (MATCH("xgcm", "tempfile_prefix")) {
         conf->tempfile_prefix = malloc(sizeof(char) * strlen(value) + 1);
@@ -72,8 +72,7 @@ void build_default_config(xgcm_configuration * conf){
     conf->make_temp_files = true;
 
 
-    conf->files = NULL;
-    conf->files_tail = NULL;
+    conf->files = ll_init();
 
     conf->relations = malloc(sizeof(hmap));
     hmap_init(conf->relations, 50);
@@ -106,39 +105,33 @@ void teardown_config(xgcm_configuration * conf){
 
 
 void add_files(xgcm_configuration * conf, const char * files) {
+    node * unprocessed = conf->files->head;
 
-    char * buffer = malloc(strlen(files) + 1);
-    memcpy(buffer, files, strlen(files) + 1);
-    char * head = buffer;
-    char * tail = buffer;
-    
-    for(; *head != '\0'; head++) {
-        if (*head == ';' && tail < head) {
-            *head = '\0';
-            add_file(conf, tail);
-            tail = (char *)(head +1);
-        }
+    ll_from_string(conf->files , files, ';');
+
+    // traverse all the old nodes, expanding them
+    if (unprocessed == NULL)
+        unprocessed = conf->files->head;
+    else
+        unprocessed = unprocessed->next;
+
+    while (unprocessed != NULL) {
+        expand_file(unprocessed);
+        unprocessed = unprocessed->next;
     }
-    add_file(conf, tail);   
+
 }
 
-void add_file(xgcm_configuration * conf, const char * rawpath) {
-
+void expand_file(node * n) {
     wordexp_t expand;
-    wordexp(rawpath, &expand, 0);
+    wordexp(n->key, &expand, 0);
     char * path = expand.we_wordv[0];
 
-    node * new_node = hmap_init_node(path, NULL, 0);
-    if (conf->files_tail) {
-        conf->files_tail->next = new_node;
-        conf->files_tail = new_node;
-    } else{
-        conf->files = new_node;
-        conf->files_tail = new_node;
-    }
+    free(n->key);
+    n->key = malloc(strlen(path) + 1);
+    strcpy(n->key, path);
 
     wordfree(&expand);
-    
 }
 
 void print_files(node * head){
@@ -159,15 +152,10 @@ void add_relation(
 }
 
 char * next_path(xgcm_configuration * conf) {
-    if (conf->files == NULL) {
+    if (conf->files->head == NULL) {
         return NULL;
     }
-    char * name = malloc(strlen(conf->files->key) + 1);
-    strcpy(name, conf->files->key);
-    node * old_node = conf->files;
-    conf->files = conf->files->next;
-    free_node(old_node);
-    return name;
+    return ll_pop_head(conf->files);
 }
 
 char * get_relation(xgcm_configuration * conf, const char * key) {

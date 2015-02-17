@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
         // go to config if no path has been set
         if (path == NULL) {
             d_printf("no search targets specified, defaulting to '~/.config/'\n");
-            add_file(&conf, "~/.config/");
+            add_files(&conf, "~/.config/");
         }
 
 
