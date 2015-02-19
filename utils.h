@@ -12,6 +12,14 @@
 #define d_printf(...) if (conf->verbose) {printf(__VA_ARGS__);}
 #define df_printf(...) if (conf->verbose) {fprintf(stderr,__VA_ARGS__);}
 
+#define perrorf(...) \
+	char * errmsg = malloc(200); \
+	sprintf(errmsg, __VA_ARGS__); \
+	perror(errmsg); \
+	free(errmsg);
+
+
+
 int TABS;
 void pdepth(FILE * fd);
 void tabup();
@@ -25,6 +33,6 @@ char * extless_path(const char * in_path);
 
 char * strip_string_whitespace(const char * str);
 
-char * chdir_to_parent(const char * rawpath);
+const char * chdir_to_parent(const char * rawpath);
 
 #endif

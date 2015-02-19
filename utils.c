@@ -135,7 +135,7 @@ char * extless_path(const char * original_path) {
     return out_path;
 }
 
-char * chdir_to_parent(const char * rawpath) {
+const char * chdir_to_parent(const char * rawpath) {
     // TODO fix this to not be string trash and instead use stdio functions
     // instead of yo mommaaa
 
@@ -160,10 +160,8 @@ char * chdir_to_parent(const char * rawpath) {
     if (*lastslash == '/') {
         *(lastslash + 1) = '\0';
     } else {
-        fprintf(stderr, 
-            "bad path '%s' supplied to function 'chdir_to_parent'\n",
-            rawpath);
-        exit(1);
+        wordfree(&expand);
+        return rawpath;
     }
 
     chdir(parent_path);

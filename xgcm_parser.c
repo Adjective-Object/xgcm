@@ -28,17 +28,11 @@ int convert_file(xgcm_conf * conf, const char * path) {
 
 	FILE *raw_file, *out_file;
 	if ((raw_file = fopen(path, "r")) == NULL) {
-		char * errmsg = malloc(200);
-		sprintf(errmsg, "open file '%s' for reading", path);
-		perror(errmsg);
-		free(errmsg);
+		perrorf("open file '%s' for reading", path);
 		return 1;
 	}
 	if ((out_file = fopen(output_path, "w+")) == NULL) {
-		char * errmsg = malloc(200);
-		sprintf(errmsg, "open file '%s' for writing", output_path);
-		perror(errmsg);
-		free(errmsg);
+		perrorf("open file '%s' for writing", output_path);
 		fclose(raw_file);
 		return 1;
 	}
