@@ -13,26 +13,30 @@
 #define df_printf(...) if (conf->verbose) {fprintf(stderr,__VA_ARGS__);}
 
 #define perrorf(...) \
-	char * errmsg = malloc(200); \
-	sprintf(errmsg, __VA_ARGS__); \
-	perror(errmsg); \
-	free(errmsg);
-
+    char * errmsg = malloc(200); \
+    sprintf(errmsg, __VA_ARGS__); \
+    perror(errmsg); \
+    free(errmsg);
 
 
 int TABS;
-void pdepth(FILE * fd);
+
+void pdepth(FILE *fd);
+
 void tabup();
+
 void tabdown();
 
-int strbool(bool *b, const char * comp);
+bool strbool(bool *b, const char *comp);
 
-bool path_endswith(const char * string, const char * ext);
-bool str_endswith(const char * string, const char * suffix);
-char * extless_path(const char * in_path);
+bool path_endswith(const char *string, const char *ext);
 
-char * strip_string_whitespace(const char * str);
+bool str_endswith(const char *string, const char *suffix);
 
-const char * chdir_to_parent(const char * rawpath);
+char *extless_path(const char *in_path);
+
+char *strip_string_whitespace(const char *str);
+
+const char *chdir_to_parent(const char *rawpath);
 
 #endif

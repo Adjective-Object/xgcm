@@ -7,11 +7,10 @@
 #include "ini/ini.h"
 #include "simple_hmap.h"
 #include "utils.h"
-#include "xgcm_conf.h"
 
-ll * TO_PARSE;
-ll * WORKING_DIRS;
-ll * PARSED;
+ll *TO_PARSE;
+ll *WORKING_DIRS;
+ll *PARSED;
 
 void conf_init() {
     WORKING_DIRS = ll_init();
@@ -20,12 +19,13 @@ void conf_init() {
 }
 
 bool relations_header = true;
-int handle_ini(
-    void * void_conf, const char * section, 
-    const char * name, const char * value) {
 
-    xgcm_configuration* conf = (xgcm_configuration*)void_conf;
-    
+int handle_ini(
+        void *void_conf, const char *section,
+        const char *name, const char *value) {
+
+    xgcm_configuration *conf = (xgcm_configuration *) void_conf;
+
     if (MATCH("xgcm", "version")) {
         conf->version = atoi(value);
     }
@@ -33,27 +33,27 @@ int handle_ini(
         add_files(conf, value);
     }
     else if (MATCH("xgcm", "recursive")) {
-        return strbool(&(conf->recursive),value);
+        return strbool(&(conf->recursive), value);
     }
     else if (MATCH("xgcm", "follow_symlinks")) {
-        return strbool(&(conf->follow_symlinks),value);
+        return strbool(&(conf->follow_symlinks), value);
     }
     else if (MATCH("xgcm", "verbose")) {
-        return strbool(&(conf->verbose),value);
+        return strbool(&(conf->verbose), value);
     }
     else if (MATCH("xgcm", "multiline_divider")) {
         conf->multiline_divider = malloc(sizeof(char) * strlen(value) + 1);
         strcpy(conf->multiline_divider, value);
-    }else if (MATCH("xgcm", "file_extension")) {
+    } else if (MATCH("xgcm", "file_extension")) {
         conf->file_extension = malloc(sizeof(char) * strlen(value) + 1);
         strcpy(conf->file_extension, value);
-    }else if (MATCH("xgcm", "tempdir_path")) {
-        conf->tempdir_path = malloc(sizeof(char) * strlen(value)  + 1);
+    } else if (MATCH("xgcm", "tempdir_path")) {
+        conf->tempdir_path = malloc(sizeof(char) * strlen(value) + 1);
         strcpy(conf->tempdir_path, value);
-    }else if (MATCH("xgcm", "tempfile_prefix")) {
+    } else if (MATCH("xgcm", "tempfile_prefix")) {
         conf->tempfile_prefix = malloc(sizeof(char) * strlen(value) + 1);
         strcpy(conf->tempfile_prefix, value);
-    }else if (MATCH("xgcm", "include")) {
+    } else if (MATCH("xgcm", "include")) {
         enqueue_conf_file(value);
     }
     else if (0 == strcmp("attributes", section)) {
@@ -65,25 +65,26 @@ int handle_ini(
                 name, value);
         add_relation(conf, name, value);
     }
-    else { 
-        df_printf( "failed to match section='%s' value='%s'\n",
-                    section, name);
+    else {
+        df_printf("failed to match section='%s' value='%s'\n",
+                section, name);
         return 0;
     }
     return 1;
 }
 
 #define DIRLEN 4096
-void enqueue_conf_file(const char * rawpath){
+
+void enqueue_conf_file(const char *rawpath) {
     if (0 == strcmp("", rawpath)) {
         return;
     }
 
     wordexp_t expand;
     wordexp(rawpath, &expand, 0);
-    char * path = expand.we_wordv[0];
+    char *path = expand.we_wordv[0];
 
-    char * wd = malloc(DIRLEN);
+    char *wd = malloc(DIRLEN);
     getcwd(wd, DIRLEN);
 
     //printf("enqueing (%s) %s\n", wd, path);
@@ -94,41 +95,41 @@ void enqueue_conf_file(const char * rawpath){
     wordfree(&expand);
 }
 
-void parse_conf_files(xgcm_conf * conf) {
-    char * oldpath = malloc(DIRLEN);
-    char * fullpath = malloc(DIRLEN);
+void parse_conf_files(xgcm_conf *conf) {
+    char *oldpath = malloc(DIRLEN);
+    char *fullpath = malloc(DIRLEN);
 
-    while(TO_PARSE->head != NULL) {
-        if(conf->verbose) {
+    while (TO_PARSE->head != NULL) {
+        if (conf->verbose) {
             printf("\nto_parse: ");
             ll_print(TO_PARSE);
             printf("working : ");
             ll_print(WORKING_DIRS);
             printf("\n");
         }
-        
+
         // change the current working directory to the parent directory of the
         // current conf file, so that wordexps from the file will work properly
         getcwd(oldpath, DIRLEN);
 
-        char * temp_path = ll_pop_head(WORKING_DIRS);
+        char *temp_path = ll_pop_head(WORKING_DIRS);
         chdir(temp_path);
 
-        char * shortname = chdir_to_parent(ll_pop_head(TO_PARSE));
+        const char *shortname = chdir_to_parent(ll_pop_head(TO_PARSE));
 
         getcwd(fullpath, DIRLEN);
         strncat(fullpath, "/", DIRLEN);
-        strncat(fullpath,shortname, DIRLEN);
+        strncat(fullpath, shortname, DIRLEN);
 
-        if (!(ll_contains(PARSED,fullpath))) {
+        if (!(ll_contains(PARSED, fullpath))) {
             // load the configuration file, printing errors on failure
             // printf("processing '%s'\n", fullpath);
             ll_append(PARSED, fullpath);
 
-            if (ini_parse(shortname, handle_ini, conf) < 0 ) {
-                fprintf(stderr, 
-                    "error loading the config file '%s'.\n", 
-                    TO_PARSE->head->key);
+            if (ini_parse(shortname, handle_ini, conf) < 0) {
+                fprintf(stderr,
+                        "error loading the config file '%s'.\n",
+                        TO_PARSE->head->key);
                 exit(1);
             }
         }
@@ -143,7 +144,7 @@ void parse_conf_files(xgcm_conf * conf) {
     free(fullpath);
 }
 
-void build_default_config(xgcm_configuration * conf){
+void build_default_config(xgcm_configuration *conf) {
     conf->version = 0;
 
     conf->recursive = true;
@@ -158,24 +159,24 @@ void build_default_config(xgcm_configuration * conf){
     conf->relations = malloc(sizeof(hmap));
     hmap_init(conf->relations, 50);
 
-    const char * deftemp = "/tmp/xgcm/";
+    const char *deftemp = "/tmp/xgcm/";
     conf->tempdir_path = malloc(sizeof(char) * (strlen(deftemp) + 1));
     strcpy(conf->tempdir_path, deftemp);
 
-    const char * deftemppre = "temp_";
+    const char *deftemppre = "temp_";
     conf->tempfile_prefix = malloc(sizeof(char) * (strlen(deftemppre) + 1));
     strcpy(conf->tempfile_prefix, deftemppre);
 
-    const char * defext = "xgcm";
+    const char *defext = "xgcm";
     conf->file_extension = malloc(sizeof(char) * (strlen(defext) + 1));
     strcpy(conf->file_extension, defext);
 
-    const char * defdivider = " ";
+    const char *defdivider = " ";
     conf->multiline_divider = malloc(sizeof(char) * strlen(defdivider) + 1);
     strcpy(conf->multiline_divider, defdivider);
 }
 
-void teardown_config(xgcm_configuration * conf){
+void teardown_config(xgcm_configuration *conf) {
     free(conf->relations);
     free(conf->tempdir_path);
     free(conf->tempfile_prefix);
@@ -184,11 +185,10 @@ void teardown_config(xgcm_configuration * conf){
 }
 
 
+void add_files(xgcm_configuration *conf, const char *files) {
+    node *unprocessed = conf->files->head;
 
-void add_files(xgcm_configuration * conf, const char * files) {
-    node * unprocessed = conf->files->head;
-
-    ll_from_string(conf->files , files, ';');
+    ll_from_string(conf->files, files, ';');
 
     // traverse all the old nodes, expanding them
     if (unprocessed == NULL)
@@ -203,10 +203,10 @@ void add_files(xgcm_configuration * conf, const char * files) {
 
 }
 
-void expand_file(node * n) {
+void expand_file(node *n) {
     wordexp_t expand;
     wordexp(n->key, &expand, 0);
-    char * path = expand.we_wordv[0];
+    char *path = expand.we_wordv[0];
 
     free(n->key);
     n->key = malloc(strlen(path) + 1);
@@ -215,10 +215,10 @@ void expand_file(node * n) {
     wordfree(&expand);
 }
 
-void print_files(node * head){
+void print_files(node *head) {
     printf("[");
     while (head) {
-        printf("%s, ",head->key);
+        printf("%s, ", head->key);
         head = head->next;
     }
     printf("]\n");
@@ -226,32 +226,32 @@ void print_files(node * head){
 }
 
 void add_relation(
-        xgcm_configuration * conf, 
-        const char * key, const char * value) {
-    hmap_append_str (conf->relations, key, value, conf->multiline_divider);
+        xgcm_configuration *conf,
+        const char *key, const char *value) {
+    hmap_append_str(conf->relations, key, value, conf->multiline_divider);
     //hmap_insert (conf->relations, key, value, strlen(value) + 1);
 }
 
-char * next_path(xgcm_configuration * conf) {
+char *next_path(xgcm_configuration *conf) {
     if (conf->files->head == NULL) {
         return NULL;
     }
     return ll_pop_head(conf->files);
 }
 
-char * get_relation(xgcm_configuration * conf, const char * key) {
-    char * stripped_key = strip_string_whitespace(key);
-    char * result = hmap_lookup(conf->relations, stripped_key);
-    free (stripped_key);
+char *get_relation(xgcm_configuration *conf, const char *key) {
+    char *stripped_key = strip_string_whitespace(key);
+    char *result = hmap_lookup(conf->relations, stripped_key);
+    free(stripped_key);
     return result;
 }
 
-void print_conf(xgcm_configuration * conf, char * context) {
+void print_conf(xgcm_configuration *conf, char *context) {
     printf("xgcm_conf '%s': {\n", context);
     printf("          version: %d\n", conf->version);
 
     printf("\n");
-    
+
     printf("        recursive: %s\n", conf->recursive ? "true" : "false");
     printf("  follow_symlinks: %s\n", conf->follow_symlinks ? "true" : "false");
     printf("          verbose: %s\n", conf->verbose ? "true" : "false");

@@ -10,11 +10,13 @@
 #include "xgcm_conf.h"
 
 
-int convert_file(xgcm_conf * conf, const char * path);
+int convert_file(xgcm_conf *conf, const char *path);
 
-char * get_input_path(xgcm_conf * conf, const char * in_path);
-char * get_output_path(xgcm_conf * conf, const char * in_path);
-char * get_writing_path(xgcm_conf * conf, const char * in_path);
+char *get_input_path(xgcm_conf *conf, const char *in_path);
+
+char *get_output_path(xgcm_conf *conf, const char *in_path);
+
+char *get_writing_path(xgcm_conf *conf, const char *in_path);
 
 void mk_temp_dir(xgcm_conf *conf);
 

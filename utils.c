@@ -3,42 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <ctype.h>
 #include "utils.h"
 
-int strbool(bool *b, const char* comp) {
-    char * ref_true = "true";
-    char * ref_false="false";
-    bool matches_true, matches_false;
-    int i;
-    
-    if (comp[0] == '1' && comp[1] == '\0') {
+bool strbool(bool *b, const char *comp) {
+    if (0 == strcmp(comp, "1") || 0 == strcmp(comp, "true")) {
         *b = true;
-        return 1;
+        return true;
     }
-    if (comp[0] == '0' && comp[1] == '\0') {
-        *b = true;
-        return 1;
-    }
-
-
-    for(i=0; i<6; i++){
-        if (i<5 && tolower(comp[i]) != ref_true[i]) {
-            matches_true = false;
-        }
-        if (tolower(comp[i]) != ref_false[i]) {
-            matches_false = false;
-        }
-    }
-    
-    if (matches_true) {
-        *b = true;
-        return 1;
-    } else if (matches_false) {
+    if (0 == strcmp(comp, "0") || 0 == strcmp(comp, "false")) {
         *b = false;
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 
@@ -48,17 +24,17 @@ bool str_endswith(const char *str, const char *suffix) {
 
     size_t lenstr = strlen(str);
     size_t lensuffix = strlen(suffix);
-    
-    if (lensuffix >  lenstr)
+
+    if (lensuffix > lenstr)
         return 0;
-    
+
     return strncmp(str + lenstr - lensuffix, suffix, lensuffix) == 0;
 }
 
 bool path_endswith(const char *str, const char *suffix) {
     size_t lensuffix = strlen(suffix);
 
-    char * ext = malloc ( lensuffix + 2 );
+    char *ext = malloc(lensuffix + 2);
     memcpy(ext + 1, suffix, lensuffix + 1);
     *ext = '.';
 
@@ -67,37 +43,39 @@ bool path_endswith(const char *str, const char *suffix) {
     return toret;
 }
 
-char * strip_string_whitespace(const char * str) {
-    int len = strlen(str);
+char *strip_string_whitespace(const char *str) {
+    size_t len = strlen(str);
 
     int fst_nonsp = -1;
     int lst_nonsp = -1;
 
     int i;
-    for (i=0; i<len; i++) {
+    for (i = 0; i < len; i++) {
         if (str[i] != ' ') {
-            if (fst_nonsp == -1){
+            if (fst_nonsp == -1) {
                 fst_nonsp = i;
-            } if (lst_nonsp < i) {
+            }
+            if (lst_nonsp < i) {
                 lst_nonsp = i;
             }
         }
     }
     lst_nonsp++;
 
-    int d = lst_nonsp - fst_nonsp;
-    char * newstr = malloc(sizeof(char) * (d + 1));
+    size_t d = (size_t) (lst_nonsp - fst_nonsp);
+    char *newstr = malloc(sizeof(char) * (d + 1));
     newstr[d] = '\0';
-    memcpy(newstr, str+fst_nonsp, d);
+    memcpy(newstr, str + fst_nonsp, d);
 
     return newstr;
 }
 
 
 int TABS = 0;
-void pdepth(FILE * stream){
+
+void pdepth(FILE *stream) {
     int i;
-    for (i=0; i<TABS; i++){
+    for (i = 0; i < TABS; i++) {
         fprintf(stream, "  ");
     }
 }
@@ -110,15 +88,15 @@ void tabdown() {
     TABS--;
 }
 
-char * extless_path(const char * original_path) {
+char *extless_path(const char *original_path) {
 
-    int len = strlen(original_path) + 1;
+    size_t len = strlen(original_path) + 1;
 
     // find the location of the point
-    const char * last_dot = NULL;
-    const char * tracer = original_path;
+    const char *last_dot = NULL;
+    const char *tracer = original_path;
     while (*tracer != '\0') {
-        if (*tracer =='.')
+        if (*tracer == '.')
             last_dot = tracer;
         tracer++;
     }
@@ -127,34 +105,34 @@ char * extless_path(const char * original_path) {
     if (last_dot == NULL)
         last_dot = original_path + len;
 
-    int sublen = (int)(last_dot - original_path);
-    char * out_path = malloc(sublen + 1);
+    size_t sublen = last_dot - original_path;
+    char *out_path = malloc(sublen + 1);
     memcpy(out_path, original_path, sublen);
     out_path[sublen] = '\0';
 
     return out_path;
 }
 
-const char * chdir_to_parent(const char * rawpath) {
-    // TODO fix this to not be string trash and instead use stdio functions
+const char *chdir_to_parent(const char *rawpath) {
+    // TODO fix this to not be string trash and instead use stdlib functions
     // instead of yo mommaaa
 
     wordexp_t expand;
     wordexp(rawpath, &expand, 0);
-    char * path = expand.we_wordv[0];
+    char *path = expand.we_wordv[0];
 
-    char * parent_path = malloc(strlen(path));
+    char *parent_path = malloc(strlen(path));
     strcpy(parent_path, path);
-    char * tracer = parent_path;
-    char * lastslash = parent_path;
+    char *tracer = parent_path;
+    char *lastslash = parent_path;
 
     while (*tracer != '\0') {
         if (*tracer == '/')
             lastslash = tracer;
-        tracer ++;
+        tracer++;
     }
 
-    char * shortpath = malloc(strlen(lastslash));
+    char *shortpath = malloc(strlen(lastslash));
     strcpy(shortpath, lastslash + 1);
 
     if (*lastslash == '/') {
