@@ -1,5 +1,4 @@
 <p align='center'>
-
 <img src="https://rawgit.com/Adjective-Object/xgcm/master/xgcm_logo.svg" />
 <h1 align='center'> xgcm </h1>
 <img src="https://img.shields.io/badge/under-refactoring-FF530D.svg?style=flat-square" />
