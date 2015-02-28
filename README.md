@@ -1,7 +1,7 @@
 <p align='center'>
 <img src="https://rawgit.com/Adjective-Object/xgcm/master/xgcm_logo.svg" />
 </p>
-<h1 align='center' style='border-bottom: none'> xgcm </h1>
+<h1 align='center' margin='none'> xgcm </h1>
 <p align='center'>
 <img src="https://img.shields.io/badge/under-refactoring-FF530D.svg?style=flat-square" />
 <img src="https://img.shields.io/badge/eyy-lmao-00A388.svg?style=flat-square" />
