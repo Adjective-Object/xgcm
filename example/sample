@@ -37,12 +37,12 @@
 ! dtools 
 !-------------------------
 
-dzen2.font: 			xft:Monospace:size=8
+dzen2.font: 			"xft:Monospace:size=8"
 dzen2.background:		#1d1f21
 dzen2.foreground: 		#c5c8c6
 
 
-dmenu.font:  			xft:Monospace:size=8
+dmenu.font:  			"xft:Monospace:size=8"
 dmenu*background: 		#1d1f21
 dmenu*foreground:		#c5c8c6
 dmenu*selforeground:    #5f819d

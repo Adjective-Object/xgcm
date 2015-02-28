@@ -8,7 +8,7 @@ A simple Global Config Manager
 
 xgcm (Ziggy see em) is an simple tool for managing config files.
 
-Many tools use their own .rc files instead of reading from 
+Many tools use their own *rc files instead of reading from 
 Xresources, environment variables, etc. 
 This tool provides a simple templating language for config files
 
@@ -34,7 +34,7 @@ Generated from [README.md.xgcm](README.md.xgcm) with config [sample_xgcmrc](samp
 [under-refactoring]: https://img.shields.io/badge/under-refactoring-FF530D.svg?style=flat-square
 [eyy-lmao]: https://img.shields.io/badge/eyy-lmao-00A388.svg?style=flat-square
 [alien]: http://i3.kym-cdn.com/entries/icons/original/000/014/178/alien.jpg
-[xgcm-logo]: ./xgcm_logo.svg
+[xgcm-logo]: https://rawgit.com/Adjective-Object/xgcm/master/xgcm_logo.svg
 
 <style>
 img[alt="xgcm-logo"] {
