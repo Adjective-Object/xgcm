@@ -1,10 +1,12 @@
 <div style="text-align:center">
+
 ![xgcm-logo][xgcm-logo] 
 
-<h1> xgcm </h1> 
+# xgcm
 ![undergoing refactoring][under-refactoring] ![ayy lmao][eyy-lmao]
 <br>
 A simple Global Config Manager
+
 </div>
 
 ##About
