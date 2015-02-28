@@ -1,4 +1,6 @@
-# {[tool_name]}  ![undergoing refactoring][under-refactoring] ![ayy lmao][eyy-lmao]
+![xgcm-logo][xgcm-logo]
+
+# xgcm  ![undergoing refactoring][under-refactoring] ![ayy lmao][eyy-lmao]
 
 A simple Global Config Manager
 
@@ -32,3 +34,12 @@ Generated from [README.md.xgcm](README.md.xgcm) with config [sample_xgcmrc](samp
 [under-refactoring]: https://img.shields.io/badge/under-refactoring-FF530D.svg?style=flat-square
 [eyy-lmao]: https://img.shields.io/badge/eyy-lmao-00A388.svg?style=flat-square
 [alien]: http://i3.kym-cdn.com/entries/icons/original/000/014/178/alien.jpg
+[xgcm-logo]: ./xgcm_logo.svg
+
+<style>
+img[alt="xgcm-logo"] {
+    width: 64pt;
+    margin:auto;
+}
+
+</style>
