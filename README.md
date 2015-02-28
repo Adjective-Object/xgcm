@@ -1,7 +1,6 @@
 <p align='center'>
-
-![xgcm-logo][xgcm-logo] 
-
+<a href=""> ![xgcm-logo][xgcm-logo] </a>
+<br>
 # xgcm
 ![undergoing refactoring][under-refactoring] ![ayy lmao][eyy-lmao]
 <br>
