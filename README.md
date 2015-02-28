@@ -1,7 +1,8 @@
 <p align='center'>
 <a href=""> ![xgcm-logo][xgcm-logo] </a>
 <br>
-# xgcm
+<h1> xgcm </h1>
+<br>
 ![undergoing refactoring][under-refactoring] ![ayy lmao][eyy-lmao]
 <br>
 A simple Global Config Manager
