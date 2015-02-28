@@ -1,11 +1,10 @@
 <p align='center'>
 
 <img src="https://rawgit.com/Adjective-Object/xgcm/master/xgcm_logo.svg" />
-<h1> xgcm </h1>
-
+<h1 align='center'> xgcm </h1>
 <img src="https://img.shields.io/badge/under-refactoring-FF530D.svg?style=flat-square" />
 <img src="https://img.shields.io/badge/eyy-lmao-00A388.svg?style=flat-square" />
-
+<br>
 A simple Global Config Manager
 </p>
 
