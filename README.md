@@ -1,8 +1,11 @@
-![xgcm-logo][xgcm-logo]
+<div style="text-align:center">
+![xgcm-logo][xgcm-logo] 
 
-# xgcm  ![undergoing refactoring][under-refactoring] ![ayy lmao][eyy-lmao]
-
+<h1> xgcm </h1> 
+![undergoing refactoring][under-refactoring] ![ayy lmao][eyy-lmao]
+<br>
 A simple Global Config Manager
+</div>
 
 ##About
 
@@ -19,7 +22,7 @@ please read [the style guide](STYLE.md) before contributing.
 ## Usage 
 
 
-
+git 
 ## Contributors
 
  Adjective-Object, Maybe you?
