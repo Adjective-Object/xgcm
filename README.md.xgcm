@@ -1,5 +1,7 @@
 <p align='center'>
-<a href=""> ![xgcm-logo][xgcm-logo] </a>
+<a href=""> 
+	<img src="https://rawgit.com/Adjective-Object/xgcm/master/xgcm_logo.svg" />
+</a>
 <br>
 <h1> {[tool_name]} </h1>
 <br>
