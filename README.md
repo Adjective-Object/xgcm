@@ -1,4 +1,4 @@
-<div style="text-align:center">
+<p align='center'>
 
 ![xgcm-logo][xgcm-logo] 
 
@@ -7,7 +7,7 @@
 <br>
 A simple Global Config Manager
 
-</div>
+</p>
 
 ##About
 
