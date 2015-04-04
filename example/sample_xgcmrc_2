@@ -6,6 +6,7 @@
     font_tiny = ""xft:Monospace:size=8""
 
     foreground      = #c5c8c6
+    foreground      = #c5c8c6
     background      = #1d1f21
 
     black           = #282a2e
@@ -15,7 +16,7 @@
     bright_red      = #cc6666
 
     green           = #8c9440
-    bright_green      = #b5bd68
+    bright_green    = #b5bd68
 
     yellow          = #de935f
     bright_yellow   = #f0c674

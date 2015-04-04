@@ -1,3 +1,9 @@
+[lua]
+    preloads = this,
+                that
+                these
+                those
+
 [xgcm]
     files = ./
  

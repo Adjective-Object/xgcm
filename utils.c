@@ -154,42 +154,63 @@ const char *chdir_to_parent(const char *rawpath) {
 
 
 void lua_stackDump (lua_State *L) {
-  int i;
-  int top = lua_gettop(L);
-  printf("===BEGIN STACK DUMP\n");
-  for (i = 1; i <= top; i++) {  /* repeat for each level */
-    int t = lua_type(L, i);
-    switch (t) {
-
-      case LUA_TSTRING:  /* strings */
-        printf("`%s'", lua_tostring(L, i));
-        break;
-
-      case LUA_TBOOLEAN:  /* booleans */
-        printf(lua_toboolean(L, i) ? "true" : "false");
-        break;
-
-      case LUA_TNUMBER:  /* numbers */
-        printf("%g", lua_tonumber(L, i));
-        break;
-
-      default:  /* other values */
-        printf("%s", lua_typename(L, t));
-        break;
-    }
-    printf("  ");  /* put a separator */
-  }
-  printf("\n");  /* end the listing */
-  printf("===END STACK DUMP\n");
+    int i;
+    int top = lua_gettop(L);
+    printf("stack (%d):", top);
+    for (i = 1; i <= top; i++) {  /* repeat for each level */
+      int t = lua_type(L, i);
+      switch (t) {
+  
+        case LUA_TSTRING:  /* strings */
+            printf("`%s'", lua_tostring(L, i));
+            break;
+    
+        case LUA_TBOOLEAN:  /* booleans */
+            printf(lua_toboolean(L, i) ? "true" : "false");
+            break;
+  
+        case LUA_TNUMBER:  /* numbers */
+            printf("%g", lua_tonumber(L, i));
+            break;
+  
+        case LUA_TNIL:  /* numbers */
+            printf("(nil)");
+            break;
+  
+        default:  /* other values */
+            printf("%s", lua_typename(L, t));
+            break;
+        }
+        printf(", ");  /* put a separator */
+      }
+    printf("\n");
 }
 
 
 void lua_globalDump(lua_State *L) {
+  printf("===BEGIN GLOBAL SCOPE DUMP\n");
     lua_pushglobaltable(L);       // Get global table
     lua_pushnil(L);               // put a nil key on stack
     while (lua_next(L,-2) != 0) { // key(-1) is replaced by the next key(-1) in table(-2)
-      printf("%s\n", lua_tostring(L,-2));  // Get key(-2) name
-      lua_pop(L,1);               // remove value(-1), now key on top at(-1)
+        printf("%s = ", lua_tostring(L, -2));  // Get key(-2) name
+        lua_getglobal(L, lua_tostring(L,-2));
+        int t = lua_type(L, -1);
+        switch (t) {
+            case LUA_TSTRING:
+                printf("'%s'\n", lua_tostring(L, -1));
+                break;
+            case LUA_TNUMBER:
+                printf("'%s'\n", lua_tonumber(L, -1));
+                break;
+            case LUA_TNIL:
+                printf("(nil)");
+                break;
+            default:  /* other values */
+                printf("%s\n", lua_typename(L, t));
+                break;
+        }
+        lua_pop(L,2);               // remove value(-1), now key on top at(-1)
     }
     lua_pop(L,1);                 // remove global table(-1)
+  printf("===END GLOBAL SCOPE DUMP\n");
 }

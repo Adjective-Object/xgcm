@@ -1,13 +1,13 @@
 ; This is a sample ini file to show how xgcm could be used
 ; to configure colors in a .Xresources file.
 
-test:   {[foreground]}
+test:   {[ ipairs(foreground) ]}
 
 !-------------------------
 ! terminal colors 
 !-------------------------
 
-*.foreground:   {[ foreground ]}
+*.foreground:   {[ foreground[0] ]}
 *.background:   {[ background ]}
 *.cursorColor:  {[ foreground ]}
 

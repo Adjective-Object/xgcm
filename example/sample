@@ -1,7 +1,7 @@
 ; This is a sample ini file to show how xgcm could be used
 ; to configure colors in a .Xresources file.
 
-test:   #c5c8c6
+test:   [string "return  ipairs(foreground) "]:1: attempt to call global 'ipairs' (a nil value)
 
 !-------------------------
 ! terminal colors 
@@ -9,7 +9,7 @@ test:   #c5c8c6
 
 *.foreground:   #c5c8c6
 *.background:   #1d1f21
-*.cursorColor:  #c5c8c6
+*.cursorColor:   foreground 
 
 *.color0:       #282a2e
 *.color8:       #373b41
@@ -42,11 +42,11 @@ test:   #c5c8c6
 
 dzen2.font: 			"xft:Monospace:size=8"
 dzen2.background:		#1d1f21
-dzen2.foreground: 		#c5c8c6
+dzen2.foreground: 		 foreground 
 
 
 dmenu.font:  			"xft:Monospace:size=8"
 dmenu*background: 		#1d1f21
-dmenu*foreground:		#c5c8c6
+dmenu*foreground:		 foreground 
 dmenu*selforeground:    #5f819d
 dmenu*selbackground:   	#c5c8c6

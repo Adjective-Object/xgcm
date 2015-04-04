@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "xgcm_traversal.h"
 #include "xgcm_conf.h"
+#include "utils.h"
 
 
 #define d_printf(...) if (conf.verbose) {printf(__VA_ARGS__);}
@@ -100,10 +101,13 @@ int main(int argc, char **argv) {
     printf("config files:\n");
     while (cfiles->head != NULL) {
         char *rawpath = ll_pop_head(cfiles);
-        printf("rawpath = %p\n", (void *) rawpath);
         enqueue_conf_file(rawpath);
     }
     parse_conf_files(&conf);
+
+    if(conf.verbose) {
+        lua_globalDump(conf.lua_state);
+    }
 
 
     // read remaining options from getopt, overwriting the config file's options

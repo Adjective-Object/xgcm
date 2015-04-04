@@ -9,7 +9,7 @@
 
 #include <lua.h>
 #include <lauxlib.h>
-#include <lualib.h> 
+#include <lualib.h>
 
 ll *TO_PARSE;
 ll *WORKING_DIRS;
@@ -29,6 +29,7 @@ int handle_ini(
 
     xgcm_configuration *conf = (xgcm_configuration *) void_conf;
 
+    // catch the xgcm configs
     if (MATCH("xgcm", "version")) {
         conf->version = atoi(value);
     }
@@ -59,17 +60,23 @@ int handle_ini(
     } else if (MATCH("xgcm", "include")) {
         enqueue_conf_file(value);
     }
+
+    // catch the attributes
     else if (0 == strcmp("attributes", section)) {
         if (relations_header) {
             d_printf("relations:\n");
             relations_header = false;
         }
-        d_printf("  ~ '%s': '%s'\n", name, value);
-        add_relation(conf, name, value);
+        if (strlen(value) > 0){
+            d_printf("  ~ '%s': '%s'\n", name, value);
+            add_relation(conf, name, value);
+        }
     }
+
+    // else print some errors
     else {
-        df_printf("failed to match section='%s' value='%s'\n",
-                section, name);
+        df_printf("failed to match section='%s' name='%s' value='%s'\n",
+                section, name, value);
         return 0;
     }
     return 1;
@@ -228,8 +235,67 @@ void print_files(node *head) {
 void add_relation(
         xgcm_configuration *conf,
         const char *key, const char *value) {
-    lua_pushstring(conf->lua_state, value);
-    lua_setglobal(conf->lua_state, key);
+    // check if the this exists
+    lua_getglobal(conf->lua_state, key);
+    int data_index = lua_gettop(conf->lua_state);
+    int t = lua_type(conf->lua_state, -1);
+    switch (t) {
+        // if not initialized, push the value on the stack and assign
+        case LUA_TNIL:
+            d_printf("\tinserting value %s = '%s'\n", key, value);
+            lua_pushstring(conf->lua_state, value);
+            lua_setglobal(conf->lua_state, key);
+            lua_pop(conf->lua_state, 1);
+            break;
+
+        // any individual value -> make it into a table
+        case LUA_TNUMBER:
+        case LUA_TSTRING:
+            d_printf("\texpanding table for %s = '%s'\n", key, value);
+            // add the stuff needed for a table
+
+            lua_newtable(conf->lua_state);
+            lua_pushnumber(conf->lua_state, 0);
+
+            // shift those elements under the data element
+            lua_insert (conf->lua_state, data_index);
+            lua_insert (conf->lua_state, data_index);
+
+            lua_settable(conf->lua_state, -3);
+
+        // append to existing table
+        case LUA_TTABLE:
+            d_printf("\tappending to table %s value '%s'\n", key, value);
+            int table_root = lua_gettop(conf->lua_state);
+            int table_index = 0;
+
+            //lua_stackDump(conf->lua_state);
+
+            lua_pushnil(conf->lua_state);
+            while (lua_next(conf->lua_state, table_root) != 0) {
+                lua_pop(conf->lua_state, 1);
+                table_index++;
+            }
+            lua_stackDump(conf->lua_state);
+            printf("\tindex %d\n", table_index);
+
+            //lua_stackDump(conf->lua_state);
+            // insert the new value into the table at largest index
+            lua_pushnumber(conf->lua_state, table_index);
+            //lua_stackDump(conf->lua_state);
+            lua_pushstring(conf->lua_state, value);
+            //lua_stackDump(conf->lua_state);
+
+            lua_stackDump(conf->lua_state);
+
+            lua_settable(conf->lua_state, -3);
+            //lua_stackDump(conf->lua_state);
+            //lua_setglobal(conf->lua_state, key);
+
+            lua_setglobal(conf->lua_state, key);
+            break;
+    }
+
 }
 
 
