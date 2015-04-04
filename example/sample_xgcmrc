@@ -1,7 +1,11 @@
 [lua]
 
-    this block of text does not follow the ini file format spec
-    and should be captured separately.
+    --  a simple test function for verifying that
+    --  lua functions are callable from xcm tags
+
+    print_test = function ()
+        return "test successful!"
+    end
 
 [xgcm]
     files = ./

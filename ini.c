@@ -155,6 +155,7 @@ int ini_parse_file(FILE *file,
                 if (0 == strcmp(section, "lua")) {
                     char * blockSection = read_block_section(file);
                     handler(user, section, "<block>", blockSection);
+                    free(blockSection);
                 }
             }
             else if (!error) {

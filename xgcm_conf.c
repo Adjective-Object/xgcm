@@ -59,6 +59,23 @@ int handle_ini(
         strcpy(conf->tempfile_prefix, value);
     } else if (MATCH("xgcm", "include")) {
         enqueue_conf_file(value);
+    } else if (MATCH("lua", "<block>")) {
+        // interpret lua block
+        df_printf("interpeting lua block:\n%s\n",value);
+        if (!luaL_loadstring(conf->lua_state, value))
+            lua_pcall(conf->lua_state, 0, LUA_MULTRET, 0);
+
+        // print any resulting errors
+        if(conf->verbose) {
+            printf("error ");
+            lua_stackDump(conf->lua_state);            
+        }
+
+        // empty the stack of all errors
+        if (lua_gettop(conf->lua_state) > 0)
+            lua_pop(conf->lua_state, lua_gettop(conf->lua_state));
+
+        df_printf("---\n");
     }
 
     // catch the attributes
@@ -276,8 +293,8 @@ void add_relation(
                 lua_pop(conf->lua_state, 1);
                 table_index++;
             }
-            lua_stackDump(conf->lua_state);
-            printf("\tindex %d\n", table_index);
+            //lua_stackDump(conf->lua_state);
+           // printf("\tindex %d\n", table_index);
 
             //lua_stackDump(conf->lua_state);
             // insert the new value into the table at largest index
@@ -286,7 +303,7 @@ void add_relation(
             lua_pushstring(conf->lua_state, value);
             //lua_stackDump(conf->lua_state);
 
-            lua_stackDump(conf->lua_state);
+            // lua_stackDump(conf->lua_state);
 
             lua_settable(conf->lua_state, -3);
             //lua_stackDump(conf->lua_state);

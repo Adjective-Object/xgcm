@@ -1,7 +1,7 @@
 ; This is a sample ini file to show how xgcm could be used
 ; to configure colors in a .Xresources file.
 
-test:   [string "return  ipairs(foreground) "]:1: attempt to call global 'ipairs' (a nil value)
+test:   test successful!
 
 !-------------------------
 ! terminal colors 
