@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include "xgcm_conf.h"
 #include "string_buffer.h"
 #include "utils.h"
 #include "xgcm_parser.h"
@@ -51,21 +52,24 @@ static int complete_capture(xgcm_conf * conf, parse_state * state) {
         // captured text to the capture buffer
        
         // forward captures beginning with `~` to the lua interpreter
+        char *value_buffer;
         if (state->capture_buffer->content[0] == '~' ) {
             d_pdepth(stdout);
-            d_printf("interpreting: {\n%s\n}\n",
-                state->capture_buffer->content);
+            d_printf("interpreting: '%s'\n",
+                state->capture_buffer->content + 1);
             
-        }
-        else {
+            value_buffer = interpret_call(
+                conf, state->capture_buffer->content + 1, true);
+
+        } else {
+            d_pdepth(stdout);
+            d_printf("capture \'%s\'\n", state->capture_buffer->content);
+            value_buffer = get_relation(conf, state->capture_buffer->content);
         }
 
-        d_pdepth(stdout);
-        d_printf("capture \'%s\'\n", state->capture_buffer->content);
-        char *relbuf = get_relation(conf, state->capture_buffer->content);
 
-        if (relbuf) {
-            fwrite(relbuf, sizeof(char), strlen(relbuf), state->out_file);
+        if (value_buffer) {
+            fwrite(value_buffer, sizeof(char), strlen(value_buffer), state->out_file);
         } else {
             tabup();
             pdepth(stderr);

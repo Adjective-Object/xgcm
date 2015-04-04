@@ -8,6 +8,7 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include "xgcm_conf.h"
+#include "string_buffer.h"
 
 typedef struct parse_state {
     FILE * raw_file;

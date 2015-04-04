@@ -65,8 +65,7 @@ int handle_ini(
             d_printf("relations:\n");
             relations_header = false;
         }
-        d_printf("  ~ '%s': '%s'\n",
-                name, value);
+        d_printf("  ~ '%s': '%s'\n", name, value);
         add_relation(conf, name, value);
     }
     else {
@@ -149,6 +148,8 @@ void parse_conf_files(xgcm_conf *conf) {
 }
 
 void build_default_config(xgcm_configuration *conf) {
+    conf->lua_state = luaL_newstate();
+
     conf->version = 0;
 
     conf->recursive = true;
@@ -156,7 +157,6 @@ void build_default_config(xgcm_configuration *conf) {
     conf->follow_symlinks = false;
     conf->verbose = false;
     conf->make_temp_files = true;
-
 
     conf->files = ll_init();
 
@@ -239,8 +239,13 @@ void add_relation(
     //hmap_insert (conf->relations, key, value, strlen(value) + 1);
 }
 
+
 char *interpret_call(xgcm_configuration *conf, const char *luaCall, bool rets) {
-    luaL_dostring(conf->lua_state, luaCall);
+    // like luaL_dostring(conf->lua_state, luaCall);
+    // but it respects lua 'return's
+    if (!luaL_loadstring(conf->lua_state, luaCall))
+        lua_pcall(conf->lua_state, 0, LUA_MULTRET, 0);
+
     if (rets) {
         char * rval = lua_tostring(conf->lua_state, -1);
         lua_pop(conf->lua_state, 1);
@@ -257,7 +262,10 @@ char *next_path(xgcm_configuration *conf) {
 }
 
 char *get_relation(xgcm_configuration *conf, const char *key) {
-    lua_getglobal(conf->lua_state, key);
+    char *goodkey=strip_string_whitespace(key);
+    lua_getglobal(conf->lua_state, goodkey);
+    free(goodkey);
+
     char * rval = lua_tostring(conf->lua_state, -1);
     lua_pop(conf->lua_state, 1);
     return rval;

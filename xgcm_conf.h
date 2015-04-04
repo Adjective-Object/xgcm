@@ -61,8 +61,12 @@ void build_default_config(xgcm_configuration *conf);
 
 void load_paths_from_conf(xgcm_configuration *conf);
 
+
 char *next_path(xgcm_configuration *conf);
 char *get_relation(xgcm_configuration *conf, const char *relation);
+char *interpret_call(xgcm_configuration *conf, const char *luaCall, bool rets);
+
+
 void add_files(xgcm_configuration *conf, const char *files);
 
 void add_file(xgcm_configuration *conf, const char *value);
