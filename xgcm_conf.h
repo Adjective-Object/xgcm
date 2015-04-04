@@ -10,7 +10,7 @@
 #include <lauxlib.h>
 #include <lualib.h> 
 
-#include "ini/ini.h"
+#include "ini.h"
 #include "simple_ll.h"
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0

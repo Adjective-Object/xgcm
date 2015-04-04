@@ -1,8 +1,7 @@
 [lua]
-    preloads = this,
-                that
-                these
-                those
+
+    this block of text does not follow the ini file format spec
+    and should be captured separately.
 
 [xgcm]
     files = ./

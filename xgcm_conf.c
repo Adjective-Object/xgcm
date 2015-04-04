@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <wordexp.h>
-#include "ini/ini.h"
+#include "ini.h"
 #include "utils.h"
 
 #include <lua.h>

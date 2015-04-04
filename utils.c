@@ -200,7 +200,7 @@ void lua_globalDump(lua_State *L) {
                 printf("'%s'\n", lua_tostring(L, -1));
                 break;
             case LUA_TNUMBER:
-                printf("'%s'\n", lua_tonumber(L, -1));
+                printf("'%g'\n", lua_tonumber(L, -1));
                 break;
             case LUA_TNIL:
                 printf("(nil)");
