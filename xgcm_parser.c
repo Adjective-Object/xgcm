@@ -2,9 +2,178 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "xgcm_traversal.h"
-#include "utils.h"
 #include <sys/stat.h>
+#include "string_buffer.h"
+#include "utils.h"
+#include "xgcm_parser.h"
+#include "xgcm_traversal.h"
+
+static int begin_capture(xgcm_conf * conf, parse_state * state) {
+    if (state->capturing) {
+        df_printf(
+                "parse error line %d\n of '%s':\n",
+                state->n_lines, state->path);
+        df_printf("\t cannot open tag over existing open tag");
+        fclose(state->raw_file);
+        fclose(state->out_file);
+        return 1;
+    } else {
+        //switch to capturing, dump write buffer to disk
+        state->capturing = true;
+        state->i += TAG_LENGTH_MINUS_ONE;
+        buffer_write(state->write_buffer, state->out_file);
+        buffer_clear(state->write_buffer);
+    }
+    return 0;
+}
+
+static int complete_capture(xgcm_conf * conf, parse_state * state) {
+    if (!state->capturing) {
+        df_printf("parse error line %d\n of '%s':\n",
+                state->n_lines, state->path);
+        df_printf(
+                "\t cannot close tag when tag has not been opened");
+        fclose(state->raw_file);
+        fclose(state->out_file);
+        return 1;
+    }
+
+    else {
+        // switch to writing
+        state->capturing = false;
+        state->i += TAG_LENGTH_MINUS_ONE;
+        // check if value in config map, else write the
+        // captured text to buffer
+        d_pdepth(stdout);
+        d_printf("capture \'%s\'\n", state->capture_buffer->content);
+        char *relbuf = get_relation(conf, state->capture_buffer->content);
+
+        if (relbuf) {
+            fwrite(relbuf, sizeof(char), strlen(relbuf), state->out_file);
+        } else {
+            tabup();
+            pdepth(stderr);
+            fprintf(
+                    stderr,
+                    "line %d: cannot find entry for key \'%s\'\n",
+                    state->n_lines,
+                    state->capture_buffer->content);
+            buffer_write(state->capture_buffer, state->out_file);
+            tabdown();
+        }
+        buffer_clear(state->capture_buffer);
+    }
+    return 0;
+}
+
+static int continue_collection(xgcm_conf *conf, parse_state * state) {
+     if (state->capturing) {
+        // error on length too long
+        if (state->capture_buffer->len == CAPTURE_BUF_LEN) {
+            df_printf("parse error line %d\n of '%s':\n",
+                    state->n_lines, state->path);
+            df_printf("capture exceedes maximum buffer length\n");
+            df_printf(state->capture_buffer->content);
+            df_printf("\n");
+            fclose(state->raw_file);
+            fclose(state->out_file);
+            return 1;
+        }
+        // put item in capture buffer
+        if (!buffer_putc(state->capture_buffer, state->read_buffer[state->i])) {
+            df_printf("parse error line %d\n of '%s':\n",
+                    state->n_lines, state->path);
+            df_printf("\tcaptured text is greater than "
+                        "maximum capture_buffer size (%d)",
+                        CAPTURE_BUF_LEN);
+            fclose(state->raw_file);
+            fclose(state->out_file);
+            return 1;
+        }
+    }
+
+    else {
+        // dump the write buffer if it is too large
+        if (state->write_buffer->len == WRITE_BUF_LEN) {
+            buffer_write(state->write_buffer, state->out_file);
+            buffer_clear(state->write_buffer);
+        }
+        // put item in write buffer
+        if (!buffer_putc(state->write_buffer, state->read_buffer[state->i])) {
+            df_printf("parse error line %d\n", state->n_lines);
+            df_printf("\tcaptured text is greater than maximum "
+                        "write_buffer size (%d)",
+                        WRITE_BUF_LEN);
+            fclose(state->raw_file);
+            fclose(state->out_file);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int convert_from_to(xgcm_conf * conf, const char * path,
+                            FILE *raw_file, FILE *out_file) {
+
+    sbuffer capture_buffer, write_buffer;
+
+    char read_buffer[FBUFLEN];
+    parse_state state = {
+        raw_file,
+        out_file,
+        &capture_buffer,
+        &write_buffer,
+        read_buffer,
+        0,
+        false,
+        0, 0,
+        path
+    };
+
+    // initialize capture buffers
+    buffer_init(&capture_buffer, CAPTURE_BUF_LEN);
+    buffer_init(&write_buffer, WRITE_BUF_LEN);
+
+    while (0 < (state.readsize = fread(read_buffer, sizeof(char),
+            FBUFLEN - TAG_LENGTH_MINUS_ONE, raw_file))) {
+        for (state.i = 0; state.i < state.readsize; state.i++) {
+
+            // step through the buffer,
+            // parsing the text at the current position. Assumes either tag
+            // does not begin with a newline. (A safe assumption)
+            if (read_buffer[state.i] == '\n') {
+                state.n_lines++;
+            }
+
+            if (0 == memcmp(&read_buffer[state.i], STARTING_TAG, TAG_LENGTH)) {
+                // if the capture is the starting tag, set mode to capturing
+                // if the mode is already set to capturing, exit with error
+                if (begin_capture(conf, &state))
+                    return 1;
+            }
+
+            else if (0 == memcmp(&read_buffer[state.i], ENDING_TAG, TAG_LENGTH)) {
+                // otherwise if it's the ending tag
+                if (complete_capture(conf, &state))
+                    return 1;
+           }
+
+           else {
+                // if the capture is neither the ending nor beginning tag,
+                // dump it to the collection buffer
+                continue_collection(conf, &state);
+            }
+        }
+
+        if (fread(read_buffer, sizeof(char), 1, raw_file)) {
+            fseek(raw_file, -TAG_LENGTH + 1, SEEK_CUR);
+        }
+    }
+    if (write_buffer.len > 0) {
+        buffer_write(&write_buffer, out_file);
+    }
+    return 0;
+}
 
 int convert_file(xgcm_conf *conf, const char *path) {
     tabup();
@@ -16,8 +185,10 @@ int convert_file(xgcm_conf *conf, const char *path) {
     printf("  %s\n", path);
 
     tabup();
+    // make the temporary directory for writing
     mk_temp_dir(conf);
 
+    // open files, exiting on error
     FILE *raw_file, *out_file;
     if ((raw_file = fopen(path, "r")) == NULL) {
         perrorf("open file '%s' for reading", path);
@@ -29,134 +200,14 @@ int convert_file(xgcm_conf *conf, const char *path) {
         return 1;
     }
 
-    bool capturing = false;
-
-    // solve the 'split tamplate tags' problem by prepending some number of
-    // characters from the previous read to the current one
-    char read_buffer[FBUFLEN];
-    size_t i, readsize;
-    int n_lines = 1;
-
-    sbuffer capture_buffer, write_buffer;
-    buffer_init(&capture_buffer, CAPTURE_BUF_LEN);
-    buffer_init(&write_buffer, WRITE_BUF_LEN);
-
-    while (0 < (readsize = fread(read_buffer,
-            sizeof(char),
-            FBUFLEN - TAG_LENGTH_MINUS_ONE,
-            raw_file))) {
-        for (i = 0; i < readsize; i++) {
-            // parse the text at the current position. Assumes either tag
-            // does not begin with a newline. Generally a safe assumption
-            if (read_buffer[i] == '\n') {
-                n_lines++;
-            }
-            if (0 == memcmp(&read_buffer[i], STARTING_TAG, TAG_LENGTH)) {
-                if (capturing) {
-                    df_printf(
-                            "parse error line %d\n of '%s':\n",
-                            n_lines, path);
-                    df_printf("\t cannot open tag over existing open tag");
-                    fclose(raw_file);
-                    fclose(out_file);
-                    return 1;
-                } else {
-                    //switch to capturing, dump write buffer to disk
-                    capturing = true;
-                    i += TAG_LENGTH_MINUS_ONE;
-                    buffer_write(&write_buffer, out_file);
-                    buffer_clear(&write_buffer);
-                }
-
-            } else if (0 == memcmp(&read_buffer[i], ENDING_TAG, 2)) {
-                if (!capturing) {
-                    df_printf("parse error line %d\n of '%s':\n",
-                            n_lines, path);
-                    df_printf(
-                            "\t cannot close tag when tag has not been opened");
-                    fclose(raw_file);
-                    fclose(out_file);
-                    return 1;
-
-                } else {
-                    // switch to writing
-                    capturing = false;
-                    i += TAG_LENGTH_MINUS_ONE;
-                    // check if value in config map, else write the
-                    // captured text to buffer
-                    d_pdepth(stdout);
-                    d_printf("capture \'%s\'\n",
-                            capture_buffer.content);
-                    char *relbuf = get_relation(conf, capture_buffer.content);
-                    if (relbuf) {
-                        fwrite(relbuf, sizeof(char), strlen(relbuf), out_file);
-                    } else {
-                        tabup();
-                        pdepth(stderr);
-                        fprintf(
-                                stderr,
-                                "line %d: cannot find entry for key \'%s\'\n",
-                                n_lines,
-                                capture_buffer.content);
-                        buffer_write(&capture_buffer, out_file);
-                        tabdown();
-                    }
-                    buffer_clear(&capture_buffer);
-
-                }
-            } else {
-                // adding to buffer if capturing
-                if (capturing) {
-                    //
-                    if (capture_buffer.len == CAPTURE_BUF_LEN) {
-                        df_printf("parse error line %d\n of '%s':\n",
-                                n_lines, path);
-                        df_printf("capture exceedes maximum buffer length\n");
-                        df_printf(capture_buffer.content);
-                        df_printf("\n");
-                        fclose(raw_file);
-                        fclose(out_file);
-                        return 1;
-                    }
-                    // put item in capture buffer
-                    if (!buffer_putc(&capture_buffer, read_buffer[i])) {
-                        df_printf("parse error line %d\n of '%s':\n",
-                                n_lines, path);
-                        df_printf("\tcaptured text is greater than maximum capture_buffer size (%d)", CAPTURE_BUF_LEN);
-                        fclose(raw_file);
-                        fclose(out_file);
-                        return 1;
-                    }
-                } else {
-                    // dump the write buffer if it is too large
-                    if (write_buffer.len == WRITE_BUF_LEN) {
-                        buffer_write(&write_buffer, out_file);
-                        buffer_clear(&write_buffer);
-                    }
-                    // put item in write buffer
-                    if (!buffer_putc(&write_buffer, read_buffer[i])) {
-                        df_printf("parse error line %d\n", n_lines);
-                        df_printf("\tcaptured text is greater than maximum write_buffer size (%d)", WRITE_BUF_LEN);
-                        fclose(raw_file);
-                        fclose(out_file);
-                        return 1;
-                    }
-                }
-            }
-        }
-
-        if (fread(read_buffer, sizeof(char), 1, raw_file)) {
-            fseek(raw_file, -TAG_LENGTH + 1, SEEK_CUR);
-        }
-    }
-    if (write_buffer.len > 0) {
-        buffer_write(&write_buffer, out_file);
-    }
+    // do the actual converstion
+    if (convert_from_to(conf, path, raw_file, out_file)) return 1;
 
     fclose(raw_file);
     tabdown();
 
-    //copy from temp to output if make_temp_files, removing anything there.
+    // copy from temp to output if make_temp_files is set to true, otherwise
+    // remove anything there.
     if (conf->make_temp_files) {
         char *final_path = get_output_path(conf, path);
 

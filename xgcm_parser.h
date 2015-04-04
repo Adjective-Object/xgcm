@@ -9,6 +9,18 @@
 #include <stdbool.h>
 #include "xgcm_conf.h"
 
+typedef struct parse_state {
+    FILE * raw_file;
+    FILE * out_file;
+    sbuffer * capture_buffer;
+    sbuffer * write_buffer;
+    char * read_buffer;
+    size_t readsize;
+    bool capturing;
+    int n_lines;
+    int i;
+    const char * path;
+} parse_state;
 
 int convert_file(xgcm_conf *conf, const char *path);
 
