@@ -52,21 +52,8 @@ static int complete_capture(xgcm_conf * conf, parse_state * state) {
         // captured text to the capture buffer
        
         // forward captures beginning with `~` to the lua interpreter
-        char *value_buffer;
-        if (state->capture_buffer->content[0] == '~' ) {
-            d_pdepth(stdout);
-            d_printf("interpreting: '%s'\n",
-                state->capture_buffer->content + 1);
-            
-            value_buffer = interpret_call(
-                conf, state->capture_buffer->content + 1, true);
-
-        } else {
-            d_pdepth(stdout);
-            d_printf("capture \'%s\'\n", state->capture_buffer->content);
-            value_buffer = get_relation(conf, state->capture_buffer->content);
-        }
-
+        char *value_buffer = 
+            lua_eval_return(conf, state->capture_buffer->content);
 
         if (value_buffer) {
             fwrite(value_buffer, sizeof(char), strlen(value_buffer), state->out_file);

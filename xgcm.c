@@ -115,8 +115,6 @@ int main(int argc, char **argv) {
 
     if (conf.verbose) {
         print_conf(&conf, "init");
-        printf("\nfound relations: \n");
-        hmap_disp(conf.relations);
         printf("\n");
     }
 

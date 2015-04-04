@@ -1,7 +1,7 @@
 ; This is a sample ini file to show how xgcm could be used
 ; to configure colors in a .Xresources file.
 
-test:   #c5c8c6_lolxdthisdoesntwork
+test:   #c5c8c6
 
 !-------------------------
 ! terminal colors 
@@ -19,6 +19,7 @@ test:   #c5c8c6_lolxdthisdoesntwork
 
 *.color2:       #8c9440
 *.color10:      #b5bd68
+
 
 *.color3:       #de935f
 *.color11:      #f0c674

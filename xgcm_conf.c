@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <wordexp.h>
 #include "ini/ini.h"
-#include "simple_hmap.h"
 #include "utils.h"
 
 #include <lua.h>
@@ -160,9 +159,6 @@ void build_default_config(xgcm_configuration *conf) {
 
     conf->files = ll_init();
 
-    conf->relations = malloc(sizeof(hmap));
-    hmap_init(conf->relations, 50);
-
     const char *deftemp = "/tmp/xgcm/";
     conf->tempdir_path = malloc(sizeof(char) * (strlen(deftemp) + 1));
     strcpy(conf->tempdir_path, deftemp);
@@ -181,11 +177,11 @@ void build_default_config(xgcm_configuration *conf) {
 }
 
 void teardown_config(xgcm_configuration *conf) {
-    free(conf->relations);
     free(conf->tempdir_path);
     free(conf->tempfile_prefix);
     free(conf->file_extension);
     free(conf->multiline_divider);
+    lua_close(conf->lua_state);
 }
 
 
@@ -234,24 +230,24 @@ void add_relation(
         const char *key, const char *value) {
     lua_pushstring(conf->lua_state, value);
     lua_setglobal(conf->lua_state, key);
-
-    //hmap_append_str(conf->relations, key, value, conf->multiline_divider);
-    //hmap_insert (conf->relations, key, value, strlen(value) + 1);
 }
 
 
-char *interpret_call(xgcm_configuration *conf, const char *luaCall, bool rets) {
+char *lua_eval_return(xgcm_configuration *conf, const char *luaCall) {
     // like luaL_dostring(conf->lua_state, luaCall);
     // but it respects lua 'return's
-    if (!luaL_loadstring(conf->lua_state, luaCall))
+    char * newLuaCall = malloc(strlen(luaCall) + 7);
+    memcpy(newLuaCall,  "return ", 7);
+    strcpy(newLuaCall+7, luaCall);
+
+    if (!luaL_loadstring(conf->lua_state, newLuaCall))
         lua_pcall(conf->lua_state, 0, LUA_MULTRET, 0);
 
-    if (rets) {
-        char * rval = lua_tostring(conf->lua_state, -1);
-        lua_pop(conf->lua_state, 1);
-        return rval;
-    }
-    return NULL;
+    free(newLuaCall);
+
+    char * rval = lua_tostring(conf->lua_state, -1);
+    lua_pop(conf->lua_state, 1);
+    return rval;
 }
 
 char *next_path(xgcm_configuration *conf) {

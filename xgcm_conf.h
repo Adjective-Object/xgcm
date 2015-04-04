@@ -11,7 +11,7 @@
 #include <lualib.h> 
 
 #include "ini/ini.h"
-#include "simple_hmap.h"
+#include "simple_ll.h"
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 
@@ -44,7 +44,6 @@ typedef struct xgcm_configuration {
     lua_State *lua_state;
 
     ll *files;
-    hmap *relations;
 } xgcm_configuration;
 typedef xgcm_configuration xgcm_conf;
 
@@ -64,7 +63,7 @@ void load_paths_from_conf(xgcm_configuration *conf);
 
 char *next_path(xgcm_configuration *conf);
 char *get_relation(xgcm_configuration *conf, const char *relation);
-char *interpret_call(xgcm_configuration *conf, const char *luaCall, bool rets);
+char *lua_eval_return(xgcm_configuration *conf, const char *luaCall);
 
 
 void add_files(xgcm_configuration *conf, const char *files);
