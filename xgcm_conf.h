@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h> 
+
 #include "ini/ini.h"
 #include "simple_hmap.h"
 
@@ -35,6 +40,8 @@ typedef struct xgcm_configuration {
     char *tempfile_prefix;
     char *file_extension;
     char *multiline_divider;
+
+    lua_State *lua_state;
 
     ll *files;
     hmap *relations;

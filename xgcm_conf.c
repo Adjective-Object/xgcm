@@ -8,6 +8,10 @@
 #include "simple_hmap.h"
 #include "utils.h"
 
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h> 
+
 ll *TO_PARSE;
 ll *WORKING_DIRS;
 ll *PARSED;
@@ -228,8 +232,21 @@ void print_files(node *head) {
 void add_relation(
         xgcm_configuration *conf,
         const char *key, const char *value) {
-    hmap_append_str(conf->relations, key, value, conf->multiline_divider);
+    lua_pushstring(conf->lua_state, value);
+    lua_setglobal(conf->lua_state, key);
+
+    //hmap_append_str(conf->relations, key, value, conf->multiline_divider);
     //hmap_insert (conf->relations, key, value, strlen(value) + 1);
+}
+
+char *interpret_call(xgcm_configuration *conf, const char *luaCall, bool rets) {
+    luaL_dostring(conf->lua_state, luaCall);
+    if (rets) {
+        char * rval = lua_tostring(conf->lua_state, -1);
+        lua_pop(conf->lua_state, 1);
+        return rval;
+    }
+    return NULL;
 }
 
 char *next_path(xgcm_configuration *conf) {
@@ -240,10 +257,10 @@ char *next_path(xgcm_configuration *conf) {
 }
 
 char *get_relation(xgcm_configuration *conf, const char *key) {
-    char *stripped_key = strip_string_whitespace(key);
-    char *result = hmap_lookup(conf->relations, stripped_key);
-    free(stripped_key);
-    return result;
+    lua_getglobal(conf->lua_state, key);
+    char * rval = lua_tostring(conf->lua_state, -1);
+    lua_pop(conf->lua_state, 1);
+    return rval;
 }
 
 void print_conf(xgcm_configuration *conf, char *context) {

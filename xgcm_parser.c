@@ -8,6 +8,9 @@
 #include "xgcm_parser.h"
 #include "xgcm_traversal.h"
 
+// helpers for stepping state at any given time
+
+/* Begins a 'capture' section in convert_from_to */
 static int begin_capture(xgcm_conf * conf, parse_state * state) {
     if (state->capturing) {
         df_printf(
@@ -27,6 +30,7 @@ static int begin_capture(xgcm_conf * conf, parse_state * state) {
     return 0;
 }
 
+/* Ends a 'capture' section in convert_from_to*/
 static int complete_capture(xgcm_conf * conf, parse_state * state) {
     if (!state->capturing) {
         df_printf("parse error line %d\n of '%s':\n",
@@ -42,8 +46,20 @@ static int complete_capture(xgcm_conf * conf, parse_state * state) {
         // switch to writing
         state->capturing = false;
         state->i += TAG_LENGTH_MINUS_ONE;
+        
         // check if value in config map, else write the
-        // captured text to buffer
+        // captured text to the capture buffer
+       
+        // forward captures beginning with `~` to the lua interpreter
+        if (state->capture_buffer->content[0] == '~' ) {
+            d_pdepth(stdout);
+            d_printf("interpreting: {\n%s\n}\n",
+                state->capture_buffer->content);
+            
+        }
+        else {
+        }
+
         d_pdepth(stdout);
         d_printf("capture \'%s\'\n", state->capture_buffer->content);
         char *relbuf = get_relation(conf, state->capture_buffer->content);
@@ -66,8 +82,9 @@ static int complete_capture(xgcm_conf * conf, parse_state * state) {
     return 0;
 }
 
+/* Continues a 'capture' section in convert_from_to */ 
 static int continue_collection(xgcm_conf *conf, parse_state * state) {
-     if (state->capturing) {
+    if (state->capturing) {
         // error on length too long
         if (state->capture_buffer->len == CAPTURE_BUF_LEN) {
             df_printf("parse error line %d\n of '%s':\n",
@@ -80,7 +97,8 @@ static int continue_collection(xgcm_conf *conf, parse_state * state) {
             return 1;
         }
         // put item in capture buffer
-        if (!buffer_putc(state->capture_buffer, state->read_buffer[state->i])) {
+        if (!buffer_putc(state->capture_buffer,
+                    state->read_buffer[state->i])) {
             df_printf("parse error line %d\n of '%s':\n",
                     state->n_lines, state->path);
             df_printf("\tcaptured text is greater than "
@@ -110,8 +128,9 @@ static int continue_collection(xgcm_conf *conf, parse_state * state) {
         }
     }
     return 0;
-}
 
+}
+/* Converts the contents of raw_fiile to out_file*/
 static int convert_from_to(xgcm_conf * conf, const char * path,
                             FILE *raw_file, FILE *out_file) {
 
