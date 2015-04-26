@@ -24,7 +24,7 @@ please read [the style guide](STYLE.md) before contributing.
 git 
 ## Contributors
 
-{[contributors]}
+{[table_tostring(contributors) ]}
 
 
 

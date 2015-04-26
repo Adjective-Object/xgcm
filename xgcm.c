@@ -7,19 +7,36 @@
 #include "utils.h"
 
 
-#define d_printf(...) if (conf.verbose) {printf(__VA_ARGS__);}
-#define df_printf(...) if (conf.verbose) {fprintf(stderr,__VA_ARGS__);}
+#define dl_printf(...) if (conf.verbose) {printf(__VA_ARGS__);}
+#define dfl_printf(...) if (conf.verbose) {fprintf(stderr,__VA_ARGS__);}
 
 extern int optind;
 
 char *CONFIG_FILES_RAW = "~/.config/xgcm/xgcmrc";
+char *EXECUTABLE_NAME = "??";
 
 void print_helptext() {
-    printf("helptext not written :L\n");
+    printf( "usage: %s [flags] [files...]\n"
+        "where [options] of\n"
+        "   -v, --verbose \n"
+        "   -l, --follow-symlinks\n"
+        "   -r, --recursive\n"
+        "   -c, --conf [conf_files]\n"
+        "       where conf_file is a semicolon separated string of config\n"
+        "       files to use while templating\n"
+        "   -f, --file-ext [file_ext]\n"
+        "       the extension of template files\n"
+        "       defaults to 'xgcm'\n"
+        "   -t, --temp\n"
+        "       sets the temporary files directory (defaults to /tmp/)\n"
+        "   -n, --no-mutable\n"
+        "       ignores changes to the lua control object from scripts\n"
+        , EXECUTABLE_NAME
+    );
 }
 
 
-const struct option long_opts[5] = {
+const struct option long_opts[7] = {
         {
                 .name = "verbose",
                 .has_arg = 0,
@@ -49,6 +66,18 @@ const struct option long_opts[5] = {
                 .has_arg = 1,
                 .flag = NULL,
                 .val = 'f'
+        },
+        {
+                .name = "no-mutables",
+                .has_arg = 0,
+                .flag = NULL,
+                .val = 'n'
+        },
+        {
+                .name = "help",
+                .has_arg = 0,
+                .flag = NULL,
+                .val = 'h'
         }
 };
 
@@ -70,8 +99,12 @@ void handle_option(xgcm_conf *c, int option) {
         case 'f': // file extensions
             c->file_extension = optarg;
             break;
-        case 'i': // in place editing (instead of temp)
-            c->make_temp_files = false;
+        case 'n': // in place editing (instead of temp)
+            c->mutable_control = false;
+            break;
+        case 'h':
+            print_helptext();
+            break;
         default: // WHOOPS
             print_helptext();
             exit(1);
@@ -80,21 +113,22 @@ void handle_option(xgcm_conf *c, int option) {
 
 
 int main(int argc, char **argv) {
+    EXECUTABLE_NAME = argv[0];
 
     xgcm_configuration conf;
     build_default_config(&conf);
 
     // looks for '--conf in the options'
     int option;
-    while ((option = getopt_long(argc, argv, "rvl:c:", long_opts, NULL)) != -1) {
+    while ((option = getopt_long(argc, argv, "vlrc:f:nh", long_opts, NULL)) != -1) {
         if (option == 'c' || option == 'v') {
             handle_option(&conf, option);
         }
     }
 
-    // traverse the linked list of config files in reverse order, parsing all
     conf_init();
 
+    // traverse the linked list of config files in reverse order, parsing all
     ll *cfiles = ll_init();
     ll_from_string(cfiles, CONFIG_FILES_RAW, ';');
 
@@ -102,13 +136,13 @@ int main(int argc, char **argv) {
     while (cfiles->head != NULL) {
         char *rawpath = ll_pop_head(cfiles);
         enqueue_conf_file(rawpath);
+        printf("  %s\n", rawpath);
     }
     parse_conf_files(&conf);
 
     if(conf.verbose) {
         lua_globalDump(conf.lua_state);
     }
-
 
     // read remaining options from getopt, overwriting the config file's options
     optind = 1;
@@ -129,7 +163,7 @@ int main(int argc, char **argv) {
         char *path = next_path(&conf);
         // go to config if no path has been set
         if (path == NULL) {
-            d_printf("no search targets specified, defaulting to '~/.config/'\n");
+            dl_printf("no search targets specified, defaulting to '~/.config/'\n");
             add_files(&conf, "~/.config/");
         }
 
@@ -150,7 +184,7 @@ int main(int argc, char **argv) {
             convert_by_path(&conf, argv[optind]);
         }
     }
-    d_printf("\nfinished parsing\n");
+    dl_printf("\nfinished parsing\n");
     teardown_config(&conf);
     // exit successfully
     return 0;

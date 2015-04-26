@@ -24,7 +24,7 @@ please read [the style guide](STYLE.md) before contributing.
 git 
 ## Contributors
 
-contributors
+[string "..."]:34: attempt to call global 'ipairs' (a nil value)
 
 
 

@@ -12,7 +12,7 @@
 
 typedef struct parse_state {
     FILE * raw_file;
-    FILE * out_file;
+    FILE * temp_file;
     sbuffer * capture_buffer;
     sbuffer * write_buffer;
     char * read_buffer;
@@ -27,9 +27,9 @@ int convert_file(xgcm_conf *conf, const char *path);
 
 char *get_input_path(xgcm_conf *conf, const char *in_path);
 
-char *get_output_path(xgcm_conf *conf, const char *in_path);
+char *get_final_path(xgcm_conf *conf, const char *in_path);
 
-char *get_writing_path(xgcm_conf *conf, const char *in_path);
+char *get_temp_path(xgcm_conf *conf, const char *in_path);
 
 void mk_temp_dir(xgcm_conf *conf);
 

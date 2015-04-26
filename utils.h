@@ -43,6 +43,8 @@ char *strip_string_whitespace(const char *str);
 
 const char *chdir_to_parent(const char *rawpath);
 
+char * expand_path(char *rawpath);
+
 void lua_stackDump (lua_State *L);
 void lua_globalDump (lua_State *L);
 

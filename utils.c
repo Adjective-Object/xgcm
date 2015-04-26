@@ -125,7 +125,7 @@ const char *chdir_to_parent(const char *rawpath) {
     wordexp(rawpath, &expand, 0);
     char *path = expand.we_wordv[0];
 
-    char *parent_path = malloc(strlen(path));
+    char *parent_path = malloc(sizeof(char) * strlen(path));
     strcpy(parent_path, path);
     char *tracer = parent_path;
     char *lastslash = parent_path;
@@ -184,6 +184,16 @@ void lua_stackDump (lua_State *L) {
         printf(", ");  /* put a separator */
       }
     printf("\n");
+}
+
+
+char * expand_path(char *rawpath){
+    wordexp_t expand;
+    wordexp(rawpath, &expand, 0);
+    char * retpath = malloc(strlen(expand.we_wordv[0]));
+    strcpy(retpath, expand.we_wordv[0]);
+    wordfree(&expand);
+    return retpath;
 }
 
 

@@ -26,6 +26,9 @@ typedef struct __attribute__((__packed__)) relation_node {
     char *val;
 } r_node;
 
+typedef struct parser_control {
+    char * final_path;
+} parser_control;
 
 typedef struct xgcm_configuration {
     int version;
@@ -34,7 +37,7 @@ typedef struct xgcm_configuration {
     bool explore_hidden;
     bool follow_symlinks;
     bool verbose;
-    bool make_temp_files;
+    bool mutable_control;
 
     char *tempdir_path;
     char *tempfile_prefix;
@@ -42,11 +45,14 @@ typedef struct xgcm_configuration {
     char *multiline_divider;
 
     lua_State *lua_state;
+    parser_control * current_parse_control;
 
     ll *files;
+
 } xgcm_configuration;
 typedef xgcm_configuration xgcm_conf;
 
+extern xgcm_conf * CURRENT_PARSING_CONF;
 
 void conf_init();
 void enqueue_conf_file(const char *rawpath);
@@ -63,6 +69,7 @@ void load_paths_from_conf(xgcm_configuration *conf);
 
 char *next_path(xgcm_configuration *conf);
 char *get_relation(xgcm_configuration *conf, const char *relation);
+void lua_eval(xgcm_configuration *conf, const char *luaCall);
 char *lua_eval_return(xgcm_configuration *conf, const char *luaCall);
 
 

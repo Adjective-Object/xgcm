@@ -15,6 +15,8 @@ ll *TO_PARSE;
 ll *WORKING_DIRS;
 ll *PARSED;
 
+xgcm_conf * CURRENT_PARSING_CONF;
+
 void conf_init() {
     WORKING_DIRS = ll_init();
     TO_PARSE = ll_init();
@@ -155,7 +157,7 @@ void parse_conf_files(xgcm_conf *conf) {
             if (ini_parse(shortname, handle_ini, conf) < 0) {
                 fprintf(stderr,
                         "error loading the config file '%s'.\n",
-                        TO_PARSE->head->key);
+                        fullpath);
                 exit(1);
             }
         }
@@ -170,8 +172,25 @@ void parse_conf_files(xgcm_conf *conf) {
     free(fullpath);
 }
 
+int l_control_set_output_path (lua_State *L) {
+    char * newpath = lua_tostring(L,1);
+    printf("output path set to: %s\n",newpath);
+    char * expandedpath = expand_path(newpath);
+    printf("expanded path: %s\n",expandedpath);
+
+    CURRENT_PARSING_CONF->
+        current_parse_control->
+            final_path = expandedpath;
+
+    return 0;
+}
+
 void build_default_config(xgcm_configuration *conf) {
     conf->lua_state = luaL_newstate();
+    lua_pushcfunction(conf->lua_state, l_control_set_output_path);
+    lua_setglobal(conf->lua_state, "xgcm_output_path");
+
+
 
     conf->version = 0;
 
@@ -179,7 +198,8 @@ void build_default_config(xgcm_configuration *conf) {
     conf->explore_hidden = false;
     conf->follow_symlinks = false;
     conf->verbose = false;
-    conf->make_temp_files = true;
+    conf->mutable_control = true;
+    conf->current_parse_control = NULL;
 
     conf->files = ll_init();
 
@@ -316,6 +336,14 @@ void add_relation(
 }
 
 
+void lua_eval(xgcm_configuration *conf, const char *luaCall) {
+    // like luaL_dostring(conf->lua_state, luaCall);
+    // but it respects lua 'return's
+
+    if (!luaL_loadstring(conf->lua_state, luaCall))
+        lua_pcall(conf->lua_state, 0, LUA_MULTRET, 0);
+}
+
 char *lua_eval_return(xgcm_configuration *conf, const char *luaCall) {
     // like luaL_dostring(conf->lua_state, luaCall);
     // but it respects lua 'return's
@@ -359,7 +387,7 @@ void print_conf(xgcm_configuration *conf, char *context) {
     printf("        recursive: %s\n", conf->recursive ? "true" : "false");
     printf("  follow_symlinks: %s\n", conf->follow_symlinks ? "true" : "false");
     printf("          verbose: %s\n", conf->verbose ? "true" : "false");
-    printf("  make_temp_files: %s\n", conf->make_temp_files ? "true" : "false");
+    printf("  mutable_control: %s\n", conf->mutable_control ? "true" : "false");
 
     printf("\n");
 
