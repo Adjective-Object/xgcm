@@ -224,7 +224,11 @@ int convert_file(xgcm_conf *conf, const char *path) {
     pctrl.final_path = get_final_path(conf, path);
     conf->current_parse_control = &pctrl;
 
+    // notify the lua state management that this is the current parsing config
     CURRENT_PARSING_CONF = conf;
+    // change dir to the directory of the path.
+    recover_working_dir();
+    chdir_to_parent(path);
     // do the actual converstion
     if (convert_from_to(conf, path, raw_file, temp_file)) return 1;
 

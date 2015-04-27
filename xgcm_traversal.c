@@ -15,6 +15,7 @@ void convert_by_path(xgcm_conf *conf, const char *rawpath) {
     d_pdepth(stdout);
     d_printf("> %s\n", rawpath);
 
+    recover_working_dir();
 
     char *path = get_input_path(conf, rawpath);
 

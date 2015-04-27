@@ -128,6 +128,12 @@ int main(int argc, char **argv) {
 
     conf_init();
 
+    // register the initial working directory so that it can be returned to
+    // while looking for files
+    char cwd[255];
+    getcwd(cwd, 255);
+    register_working_dir(cwd);
+
     // traverse the linked list of config files in reverse order, parsing all
     ll *cfiles = ll_init();
     ll_from_string(cfiles, CONFIG_FILES_RAW, ';');

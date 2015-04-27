@@ -37,11 +37,14 @@ bool path_endswith(const char *string, const char *ext);
 
 bool str_endswith(const char *string, const char *suffix);
 
-char *extless_path(const char *in_path);
+char * extless_path(const char *in_path);
 
-char *strip_string_whitespace(const char *str);
+char * strip_string_whitespace(const char *str);
 
-const char *chdir_to_parent(const char *rawpath);
+void register_working_dir(const char * rawpath);
+void recover_working_dir();
+
+const char * chdir_to_parent(const char *rawpath);
 
 char * expand_path(char *rawpath);
 

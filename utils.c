@@ -117,6 +117,17 @@ char *extless_path(const char *original_path) {
     return out_path;
 }
 
+char * ORIGINAL_WORKING_DIRECTORY = "\0";
+
+void register_working_dir(const char * rawpath){
+    char * ORIGINAL_WORKING_DIRECTORY = malloc(strlen(rawpath) * sizeof(char));
+    strcpy(ORIGINAL_WORKING_DIRECTORY, rawpath);
+}
+
+void recover_working_dir(){
+    chdir(ORIGINAL_WORKING_DIRECTORY);
+}
+
 const char *chdir_to_parent(const char *rawpath) {
     // TODO fix this to not be string trash and instead use stdlib functions
     // instead of yo mommaaa

@@ -174,9 +174,12 @@ void parse_conf_files(xgcm_conf *conf) {
 
 int l_control_set_output_path (lua_State *L) {
     char * newpath = lua_tostring(L,1);
-    printf("output path set to: %s\n",newpath);
+
+    // just so the macros work
+    xgcm_conf * conf = CURRENT_PARSING_CONF;
+    d_printf("output path set to: %s\n",newpath);
     char * expandedpath = expand_path(newpath);
-    printf("expanded path: %s\n",expandedpath);
+    d_printf("expanded path: %s\n",expandedpath);
 
     CURRENT_PARSING_CONF->
         current_parse_control->
@@ -241,7 +244,9 @@ void add_files(xgcm_configuration *conf, const char *files) {
         unprocessed = unprocessed->next;
 
     while (unprocessed != NULL) {
+        d_printf("expanding registered file %s ->", unprocessed->key);
         expand_file(unprocessed);
+        d_printf(" %s\n", unprocessed->key);
         unprocessed = unprocessed->next;
     }
 
@@ -251,12 +256,14 @@ void expand_file(node *n) {
     wordexp_t expand;
     wordexp(n->key, &expand, 0);
     char *path = expand.we_wordv[0];
+    char *rp = realpath(path, NULL);
 
     free(n->key);
-    n->key = malloc(strlen(path) + 1);
-    strcpy(n->key, path);
+    n->key = malloc(strlen(rp) + 1);
+    strcpy(n->key, rp);
 
     wordfree(&expand);
+    free(rp);
 }
 
 void print_files(node *head) {
