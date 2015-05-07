@@ -120,7 +120,8 @@ char *extless_path(const char *original_path) {
 char * ORIGINAL_WORKING_DIRECTORY = "\0";
 
 void register_working_dir(const char * rawpath){
-    char * ORIGINAL_WORKING_DIRECTORY = malloc(strlen(rawpath) * sizeof(char));
+    char * ORIGINAL_WORKING_DIRECTORY = 
+        malloc((strlen(rawpath) + 1) * sizeof(char));
     strcpy(ORIGINAL_WORKING_DIRECTORY, rawpath);
 }
 
@@ -136,7 +137,7 @@ const char *chdir_to_parent(const char *rawpath) {
     wordexp(rawpath, &expand, 0);
     char *path = expand.we_wordv[0];
 
-    char *parent_path = malloc(sizeof(char) * strlen(path));
+    char *parent_path = malloc(sizeof(char) * (strlen(path) + 1));
     strcpy(parent_path, path);
     char *tracer = parent_path;
     char *lastslash = parent_path;
@@ -201,7 +202,7 @@ void lua_stackDump (lua_State *L) {
 char * expand_path(char *rawpath){
     wordexp_t expand;
     wordexp(rawpath, &expand, 0);
-    char * retpath = malloc(strlen(expand.we_wordv[0]));
+    char * retpath = malloc(strlen(expand.we_wordv[0]) + 1);
     strcpy(retpath, expand.we_wordv[0]);
     wordfree(&expand);
     return retpath;

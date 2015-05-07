@@ -354,7 +354,7 @@ void lua_eval(xgcm_configuration *conf, const char *luaCall) {
 char *lua_eval_return(xgcm_configuration *conf, const char *luaCall) {
     // like luaL_dostring(conf->lua_state, luaCall);
     // but it respects lua 'return's
-    char * newLuaCall = malloc(strlen(luaCall) + 7);
+    char * newLuaCall = malloc(strlen(luaCall) + 8);
     memcpy(newLuaCall,  "return ", 7);
     strcpy(newLuaCall+7, luaCall);
 
