@@ -242,7 +242,7 @@ int convert_file(xgcm_conf *conf, const char *path) {
     FILE *final_file;
     if ((final_file = fopen(pctrl.final_path, "w")) == NULL) {
         char *errmsg = malloc(200);
-        sprintf(errmsg, "failed to open file '%s' for writing", path);
+        sprintf(errmsg, "failed to open file '%s' for writing", pctrl.final_path);
         perror(errmsg);
         exit(1);
     }

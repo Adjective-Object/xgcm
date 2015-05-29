@@ -165,7 +165,7 @@ void parse_conf_files(xgcm_conf *conf) {
         //     printf("already processed '%s' skipping\n", fullpath);
         // }
 
-        // change th current working directory back to the old directory
+        // change the current working directory back to the old directory
         chdir(oldpath);
     }
     free(oldpath);
@@ -362,6 +362,11 @@ char *lua_eval_return(xgcm_configuration *conf, const char *luaCall) {
         lua_pcall(conf->lua_state, 0, LUA_MULTRET, 0);
 
     free(newLuaCall);
+
+    // TODO check if the return value is a list, and if so, return the 
+    // last element
+
+    // .. probably also add some kind of casting from other types to string
 
     char * rval = lua_tostring(conf->lua_state, -1);
     lua_pop(conf->lua_state, 1);
