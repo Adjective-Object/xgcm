@@ -368,9 +368,38 @@ char *lua_eval_return(xgcm_configuration *conf, const char *luaCall) {
 
     // .. probably also add some kind of casting from other types to string
 
-    char * rval = lua_tostring(conf->lua_state, -1);
-    lua_pop(conf->lua_state, 1);
-    return rval;
+    // if the output is a table, get the highest indexed element and return that
+    if (lua_istable(conf->lua_state, -1)) {
+        
+        // for some reason lua_isnil was not working...
+        int index = 0;
+        char * tablevalue;
+        do {
+            d_printf("checking table index: %d", index)
+            lua_pushnumber(conf->lua_state, index);
+            lua_gettable(conf->lua_state, -2);
+            tablevalue = lua_tostring(conf->lua_state, -1);
+            d_printf("  %s\n", tablevalue);
+
+            index++;
+            lua_pop(conf->lua_state, 1);
+        } while (tablevalue != NULL);
+        
+        // index is now 2+ the max index of the table, so decrement it
+        lua_pushnumber(conf->lua_state, index - 2);
+        lua_gettable(conf->lua_state, -2);
+        char * lval = lua_tostring(conf->lua_state, -1);
+        d_printf("    Settled on \"%s\"\n", lval);
+        char * rval = malloc(strlen(lval) + 1);
+        memcpy(rval, lval, strlen(lval) + 1);
+        // pop the string and the table off the stack
+        lua_pop(conf->lua_state, 2);
+        return rval;
+    } else {
+        char * rval = lua_tostring(conf->lua_state, -1);
+        lua_pop(conf->lua_state, 1);
+        return rval;
+    }
 }
 
 char *next_path(xgcm_configuration *conf) {

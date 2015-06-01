@@ -3,7 +3,9 @@
 
 {[~ xgcm_output_path("./sample_output")]}
 
-test:   {[ print_test() ]}
+lua_fn_test:   {[ print_test() ]}
+
+multiple_assignment_test: {[ multiple_assignment_test ]}
 
 !-------------------------
 ! terminal colors 

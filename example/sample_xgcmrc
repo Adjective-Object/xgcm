@@ -64,3 +64,14 @@
     contributors =
         Adjective-Object
         Maybe you?
+
+
+    multiple_assignment_test = 
+        Multiple
+        Assignment
+        Test
+        This
+        Value
+        Should
+        Be
+        Multiple Assignment Test Successful!
