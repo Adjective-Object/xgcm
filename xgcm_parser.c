@@ -16,19 +16,21 @@ extern xgcm_conf * CURRENT_PARSING_CONF;
 /* Begins a 'capture' section in convert_from_to */
 static int begin_capture(xgcm_conf * conf, parse_state * state) {
     if (state->capturing) {
-        df_printf(
+        fprintf(stderr,
                 "parse error line %d\n of '%s':\n",
                 state->n_lines, state->path);
-        df_printf("\t cannot open tag over existing open tag");
+        fprintf(stderr,"\t cannot open tag over existing open tag\n");
         fclose(state->raw_file);
         fclose(state->temp_file);
         return 1;
     } else {
         //switch to capturing, dump write buffer to disk
         state->capturing = true;
-        state->i += TAG_LENGTH_MINUS_ONE;
+        csbuffer_clear(state->tag_buffer);
         buffer_write(state->write_buffer, state->temp_file);
         buffer_clear(state->write_buffer);
+        // get the current char off the read buffer and put it into the cap buff
+        buffer_putc(state->capture_buffer, state->read_buffer[state->i]);
     }
     return 0;
 }
@@ -36,10 +38,10 @@ static int begin_capture(xgcm_conf * conf, parse_state * state) {
 /* Ends a 'capture' section in convert_from_to*/
 static int complete_capture(xgcm_conf * conf, parse_state * state) {
     if (!state->capturing) {
-        df_printf("parse error line %d\n of '%s':\n",
+        fprintf(stderr,"parse error line %d\n of '%s':\n",
                 state->n_lines, state->path);
-        df_printf(
-                "\t cannot close tag when tag has not been opened");
+        fprintf(stderr,
+                "\t cannot close tag when tag has not been opened\n");
         fclose(state->raw_file);
         fclose(state->temp_file);
         return 1;
@@ -48,9 +50,9 @@ static int complete_capture(xgcm_conf * conf, parse_state * state) {
     else {
         // switch to writing
         state->capturing = false;
-        state->i += TAG_LENGTH_MINUS_ONE;
-        
-        // check if value in config map, else write the
+        csbuffer_clear(state->tag_buffer);
+
+       // check if value in config map, else write the
         // captured text to the capture buffer
 
         // if the capture begins with ~, evaluate it without return
@@ -78,6 +80,9 @@ static int complete_capture(xgcm_conf * conf, parse_state * state) {
             tabdown();
         }
         buffer_clear(state->capture_buffer);
+        // get the current char off the read buffer and put it into the wrte buf
+        buffer_putc(state->write_buffer, state->read_buffer[state->i]);
+
     }
     return 0;
 }
@@ -87,21 +92,23 @@ static int continue_collection(xgcm_conf *conf, parse_state * state) {
     if (state->capturing) {
         // error on length too long
         if (state->capture_buffer->len == CAPTURE_BUF_LEN) {
-            df_printf("parse error line %d\n of '%s':\n",
+            fprintf(stderr,"parse error line %d\n of '%s':\n",
                     state->n_lines, state->path);
-            df_printf("capture exceedes maximum buffer length\n");
-            df_printf(state->capture_buffer->content);
-            df_printf("\n");
+            fprintf(stderr,"capture exceeds maximum buffer length\n");
+            fprintf(stderr,state->capture_buffer->content);
+            fprintf(stderr,"\n");
             fclose(state->raw_file);
             fclose(state->temp_file);
             return 1;
         }
-        // put item in capture buffer
-        if (!buffer_putc(state->capture_buffer,
-                    state->read_buffer[state->i])) {
-            df_printf("parse error line %d\n of '%s':\n",
+        // push char from tag capture buffer to the write buffer,
+        // and put new char into tag capture buffer
+        char popped_char = csbuffer_cycle(state->tag_buffer, 
+                state->read_buffer[state->i]);
+        if (popped_char && !buffer_putc(state->capture_buffer, popped_char)) {
+            fprintf(stderr,"parse error line %d\n of '%s':\n",
                     state->n_lines, state->path);
-            df_printf("\tcaptured text is greater than "
+            fprintf(stderr,"\tcaptured text is greater than "
                         "maximum capture_buffer size (%d)",
                         CAPTURE_BUF_LEN);
             fclose(state->raw_file);
@@ -117,9 +124,11 @@ static int continue_collection(xgcm_conf *conf, parse_state * state) {
             buffer_clear(state->write_buffer);
         }
         // put item in write buffer
-        if (!buffer_putc(state->write_buffer, state->read_buffer[state->i])) {
-            df_printf("parse error line %d\n", state->n_lines);
-            df_printf("\tcaptured text is greater than maximum "
+        char popped_char = csbuffer_cycle(state->tag_buffer, 
+                state->read_buffer[state->i]);
+        if (popped_char && !buffer_putc(state->write_buffer, popped_char)) {
+            fprintf(stderr,"parse error line %d\n", state->n_lines);
+            fprintf(stderr,"\tcaptured text is greater than maximum "
                         "write_buffer size (%d)",
                         WRITE_BUF_LEN);
             fclose(state->raw_file);
@@ -135,6 +144,7 @@ static int convert_from_to(xgcm_conf * conf, const char * path,
                             FILE *raw_file, FILE *temp_file) {
 
     sbuffer capture_buffer, write_buffer;
+    csbuffer tag_buffer;
 
     char read_buffer[FBUFLEN];
     parse_state state = {
@@ -142,6 +152,7 @@ static int convert_from_to(xgcm_conf * conf, const char * path,
         temp_file,
         &capture_buffer,
         &write_buffer,
+        &tag_buffer,
         read_buffer,
         0,
         false,
@@ -152,9 +163,12 @@ static int convert_from_to(xgcm_conf * conf, const char * path,
     // initialize capture buffers
     buffer_init(&capture_buffer, CAPTURE_BUF_LEN);
     buffer_init(&write_buffer, WRITE_BUF_LEN);
+    csbuffer_init(&tag_buffer, TAG_LENGTH);
+
+    int start_match = 0, end_match = 0;
 
     while (0 < (state.readsize = fread(read_buffer, sizeof(char),
-            FBUFLEN - TAG_LENGTH_MINUS_ONE, raw_file))) {
+            FBUFLEN, raw_file))) {
         for (state.i = 0; state.i < state.readsize; state.i++) {
 
             // step through the buffer,
@@ -164,33 +178,56 @@ static int convert_from_to(xgcm_conf * conf, const char * path,
                 state.n_lines++;
             }
 
-            if (0 == memcmp(&read_buffer[state.i], STARTING_TAG, TAG_LENGTH)) {
+            if (start_match == TAG_LENGTH) {
                 // if the capture is the starting tag, set mode to capturing
                 // if the mode is already set to capturing, exit with error
+                start_match = 0;
                 if (begin_capture(conf, &state))
                     return 1;
             }
 
-            else if (0 == memcmp(&read_buffer[state.i], ENDING_TAG, TAG_LENGTH)) {
+            else if (end_match == TAG_LENGTH) {
                 // otherwise if it's the ending tag
+                end_match = 0;
                 if (complete_capture(conf, &state))
                     return 1;
-           }
+            }
 
-           else {
+            else {
                 // if the capture is neither the ending nor beginning tag,
                 // dump it to the collection buffer
                 continue_collection(conf, &state);
             }
-        }
 
-        if (fread(read_buffer, sizeof(char), 1, raw_file)) {
-            fseek(raw_file, -TAG_LENGTH + 1, SEEK_CUR);
+
+            if (read_buffer[state.i] == STARTING_TAG[start_match])
+                start_match ++;
+            else
+                start_match = 0;
+
+
+            if (read_buffer[state.i] == ENDING_TAG[end_match])
+                end_match ++;
+            else
+                end_match = 0;
+
         }
     }
-    if (write_buffer.len > 0) {
-        buffer_write(&write_buffer, temp_file);
+    // dump the remainder of the buffers
+    buffer_write(&write_buffer, temp_file);
+    
+    int ct = (tag_buffer.count < TAG_LENGTH) ? tag_buffer.count: TAG_LENGTH;
+    if (ct) {
+        
+        // printf("insertin \"%.*s\n\"", 2, tag_buffer.contenthttp://i.imgur.com/EwU3XwU.jpg);
+        // dump the tag capture buffer and the 
+        // current character to the file on EOF
+        for (; ct>0; ct--) {
+            char c = csbuffer_cycle(&tag_buffer, '\0');
+            fwrite(&c, sizeof(char), 1, temp_file);
+        }
     }
+    
     return 0;
 }
 

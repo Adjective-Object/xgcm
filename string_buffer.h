@@ -23,4 +23,20 @@ void buffer_write(sbuffer *b, FILE *f);
 
 void buffer_teardown(sbuffer *b);
 
+
+
+typedef struct cyclic_string_buffer {
+    char *content;
+    char *writehead;
+    size_t length;
+    int count;
+} cyclic_string_buffer;
+typedef cyclic_string_buffer csbuffer;
+
+void csbuffer_init(csbuffer *b, size_t maxlen);
+
+char csbuffer_cycle(csbuffer *b, char c);
+
+void csbuffer_clear(csbuffer *b);
+
 #endif

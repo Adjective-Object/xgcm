@@ -1,7 +1,7 @@
 ; This is a sample ini file to show how xgcm could be used
 ; to configure colors in a .Xresources file.
 
-{[~ xgcm_output_path("./sample_output")]}
+{[~ xgcm_output_path("./sample output")]}
 
 lua_fn_test:   {[ print_test() ]}
 

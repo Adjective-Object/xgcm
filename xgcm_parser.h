@@ -15,6 +15,7 @@ typedef struct parse_state {
     FILE * temp_file;
     sbuffer * capture_buffer;
     sbuffer * write_buffer;
+    csbuffer * tag_buffer;
     char * read_buffer;
     size_t readsize;
     bool capturing;
@@ -38,8 +39,7 @@ void mk_temp_dir(xgcm_conf *conf);
 #define WRITE_BUF_LEN 1024
 #define STARTING_TAG "{["
 #define ENDING_TAG "]}"
-#define TAG_LENGTH_MINUS_ONE 1
-#define TAG_LENGTH 2
+#define TAG_LENGTH 2 * sizeof(char)
 
 
 #endif
