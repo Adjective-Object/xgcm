@@ -69,9 +69,6 @@ void load_paths_from_conf(xgcm_configuration *conf);
 
 char *next_path(xgcm_configuration *conf);
 char *get_relation(xgcm_configuration *conf, const char *relation);
-void lua_eval(xgcm_configuration *conf, const char *luaCall);
-char *lua_eval_return(xgcm_configuration *conf, const char *luaCall);
-
 
 void add_files(xgcm_configuration *conf, const char *files);
 

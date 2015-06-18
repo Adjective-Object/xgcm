@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "xgcm_parser.h"
 #include "xgcm_traversal.h"
+#include "xgcm_lua.h"
 
 extern xgcm_conf * CURRENT_PARSING_CONF;
 

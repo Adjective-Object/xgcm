@@ -172,26 +172,10 @@ void parse_conf_files(xgcm_conf *conf) {
     free(fullpath);
 }
 
-int l_control_set_output_path (lua_State *L) {
-    char * newpath = lua_tostring(L,1);
-
-    // just so the macros work
-    xgcm_conf * conf = CURRENT_PARSING_CONF;
-    d_printf("output path set to: %s\n",newpath);
-    char * expandedpath = expand_path(newpath);
-    d_printf("expanded path: %s\n",expandedpath);
-
-    CURRENT_PARSING_CONF->
-        current_parse_control->
-            final_path = expandedpath;
-
-    return 0;
-}
-
 void build_default_config(xgcm_configuration *conf) {
     conf->lua_state = luaL_newstate();
-    lua_pushcfunction(conf->lua_state, l_control_set_output_path);
-    lua_setglobal(conf->lua_state, "xgcm_output_path");
+
+    register_xgcm_fns(conf->lua_state);
 
 
 
@@ -340,66 +324,6 @@ void add_relation(
             break;
     }
 
-}
-
-
-void lua_eval(xgcm_configuration *conf, const char *luaCall) {
-    // like luaL_dostring(conf->lua_state, luaCall);
-    // but it respects lua 'return's
-
-    if (!luaL_loadstring(conf->lua_state, luaCall))
-        lua_pcall(conf->lua_state, 0, LUA_MULTRET, 0);
-}
-
-char *lua_eval_return(xgcm_configuration *conf, const char *luaCall) {
-    // like luaL_dostring(conf->lua_state, luaCall);
-    // but it respects lua 'return's
-    char * newLuaCall = malloc(strlen(luaCall) + 8);
-    memcpy(newLuaCall,  "return ", 7);
-    strcpy(newLuaCall+7, luaCall);
-
-    if (!luaL_loadstring(conf->lua_state, newLuaCall))
-        lua_pcall(conf->lua_state, 0, LUA_MULTRET, 0);
-
-    free(newLuaCall);
-
-    // TODO check if the return value is a list, and if so, return the 
-    // last element
-
-    // .. probably also add some kind of casting from other types to string
-
-    // if the output is a table, get the highest indexed element and return that
-    if (lua_istable(conf->lua_state, -1)) {
-        
-        // for some reason lua_isnil was not working...
-        int index = 0;
-        char * tablevalue;
-        do {
-            d_printf("checking table index: %d", index)
-            lua_pushnumber(conf->lua_state, index);
-            lua_gettable(conf->lua_state, -2);
-            tablevalue = lua_tostring(conf->lua_state, -1);
-            d_printf("  %s\n", tablevalue);
-
-            index++;
-            lua_pop(conf->lua_state, 1);
-        } while (tablevalue != NULL);
-        
-        // index is now 2+ the max index of the table, so decrement it
-        lua_pushnumber(conf->lua_state, index - 2);
-        lua_gettable(conf->lua_state, -2);
-        char * lval = lua_tostring(conf->lua_state, -1);
-        d_printf("    Settled on \"%s\"\n", lval);
-        char * rval = malloc(strlen(lval) + 1);
-        memcpy(rval, lval, strlen(lval) + 1);
-        // pop the string and the table off the stack
-        lua_pop(conf->lua_state, 2);
-        return rval;
-    } else {
-        char * rval = lua_tostring(conf->lua_state, -1);
-        lua_pop(conf->lua_state, 1);
-        return rval;
-    }
 }
 
 char *next_path(xgcm_configuration *conf) {
