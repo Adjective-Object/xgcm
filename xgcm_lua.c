@@ -80,7 +80,7 @@ void xyz_from_lab(double xyz[3], double lab[3]) {
     double vx, vy, vz;
     vy = (lab[0] + 16) / 116;
     vx = lab[1] / 500 + vy;
-    vz = vy - lab[3] / 200;
+    vz = vy - lab[2] / 200;
 
     double pvx, pvy, pvz;
     pvx = powl(vx,3);
@@ -103,7 +103,7 @@ void rgb_from_xyz(double rgb[3], double xyz[3]) {
     vz = xyz[2] / 100;
 
     double vr, vg, vb;
-    vr = vx *  3.2406 + vy *  3.2406 + vz * -0.4986;
+    vr = vx *  3.2406 + vy * -1.5372 + vz * -0.4986;
     vg = vx * -0.9689 + vy *  1.8758 + vz *  0.0415;
     vb = vx *  0.0557 + vy * -0.2040 + vz *  1.0570;
 
@@ -116,6 +116,13 @@ void rgb_from_xyz(double rgb[3], double xyz[3]) {
     rgb[2] = vb * 255;
 }
 
+void hex_str_from_rgb(char out_str[9], double rgb[3]) {
+    out_str[0] = '#';
+
+    sprintf((out_str + 1), "%2x", (unsigned int) rgb[0]);
+    sprintf((out_str + 3), "%2x", (unsigned int) rgb[1]);
+    sprintf((out_str + 5), "%2x", (unsigned int) rgb[2]);
+}
 
 
 
@@ -200,44 +207,24 @@ int l_lab_lumdiff(lua_State *L) {
     lua_Number difference = lua_tonumber(L, -1);
     lua_pop(L, 2);
 
-    printf("l_lab_lumdiff called: hexString=\"%s\", diff=%f\n",
-        hexString, difference);
-
     double rgb[3], xyz[3], lab[3]; 
     
     // convert the hex string to an R/G/B set of doubles in [0, 255]
     rgb_from_hex_str(rgb, hexString);
-    printf("rgb repr: %f, %f, %f\n", rgb[0], rgb[1], rgb[2]);
-
     xyz_from_rgb(xyz, rgb); // then to xyz
-    printf("xyz repr: %f, %f, %f\n", xyz[0], xyz[1], xyz[2]);
-
     lab_from_xyz(lab, xyz); // then to lab
-    printf("lab repr: %f, %f, %f\n", lab[0], lab[1], lab[2]);
 
     // add the lab difference requested
     lab[0] = lab[0] + difference;
     lab[0] = lab[0] < -100 ? -100 : lab[0];
     lab[0] = lab[0] > 100  ?  100 : lab[0];
 
-    printf("---\n");
-    printf("lab repr: %f, %f, %f\n", lab[0], lab[1], lab[2]);
-
-    // and convert back
+    // and convert back to rgb
     xyz_from_lab(xyz, lab); // then to lab
-    printf("xyz repr: %f, %f, %f\n", xyz[0], xyz[1], xyz[2]);
-
     rgb_from_xyz(rgb, xyz); // then to xyz
-    printf("rgb repr: %f, %f, %f\n", rgb[0], rgb[1], rgb[2]);
 
     char out_str[9];
-    out_str[0] = '#';
-
-    sprintf((out_str + 1), "%2x", (unsigned int) rgb[0]);
-    sprintf((out_str + 3), "%2x", (unsigned int) rgb[1]);
-    sprintf((out_str + 5), "%2x", (unsigned int) rgb[2]);
-
-    printf("out_str=%.*s\n", 7, out_str);
+    hex_str_from_rgb(out_str, rgb);
 
     lua_pushstring(L, out_str);
 
