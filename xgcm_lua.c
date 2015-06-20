@@ -231,10 +231,42 @@ int l_lab_lumdiff(lua_State *L) {
     return 1;
 }
 
+
+int l_lab_lumset(lua_State *L) {
+    // get the args
+    char * hexString = lua_tostring(L, -2);
+    lua_Number lum = lua_tonumber(L, -1);
+    lua_pop(L, 2);
+
+    double rgb[3], xyz[3], lab[3]; 
+    
+    // convert the hex string to an R/G/B set of doubles in [0, 255]
+    rgb_from_hex_str(rgb, hexString);
+    xyz_from_rgb(xyz, rgb); // then to xyz
+    lab_from_xyz(lab, xyz); // then to lab
+
+    // add the lab difference requested
+    lab[0] = lum;
+    // and convert back to rgb
+    xyz_from_lab(xyz, lab); // then to lab
+    rgb_from_xyz(rgb, xyz); // then to xyz
+
+    char out_str[9];
+    hex_str_from_rgb(out_str, rgb);
+
+    lua_pushstring(L, out_str);
+
+    return 1;
+}
+
 void register_xgcm_fns(lua_State *L) {
     lua_pushcfunction(L, l_set_output_path);
     lua_setglobal(L, "xgcm_output_path");
 
     lua_pushcfunction(L, l_lab_lumdiff);
     lua_setglobal(L, "lab_lumdiff");
+
+
+    lua_pushcfunction(L, l_lab_lumset);
+    lua_setglobal(L, "lab_lumsett");
 }
