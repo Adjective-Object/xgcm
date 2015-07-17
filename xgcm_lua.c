@@ -268,5 +268,5 @@ void register_xgcm_fns(lua_State *L) {
 
 
     lua_pushcfunction(L, l_lab_lumset);
-    lua_setglobal(L, "lab_lumsett");
+    lua_setglobal(L, "lab_lumset");
 }
