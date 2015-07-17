@@ -10,6 +10,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+#include "xgcm_lua.h"
 
 ll *TO_PARSE;
 ll *WORKING_DIRS;
@@ -174,10 +175,9 @@ void parse_conf_files(xgcm_conf *conf) {
 
 void build_default_config(xgcm_configuration *conf) {
     conf->lua_state = luaL_newstate();
+    luaL_openlibs(conf->lua_state);
 
     register_xgcm_fns(conf->lua_state);
-
-
 
     conf->version = 0;
 
@@ -283,19 +283,20 @@ void add_relation(
             // add the stuff needed for a table
 
             lua_newtable(conf->lua_state);
-            lua_pushnumber(conf->lua_state, 0);
+            lua_pushnumber(conf->lua_state, 1);
 
             // shift those elements under the data element
             lua_insert (conf->lua_state, data_index);
             lua_insert (conf->lua_state, data_index);
 
+            //lua_stackDump(conf->lua_state);
             lua_settable(conf->lua_state, -3);
 
         // append to existing table
         case LUA_TTABLE:
             d_printf("\tappending to table %s value '%s'\n", key, value);
             int table_root = lua_gettop(conf->lua_state);
-            int table_index = 0;
+            int table_index = 1;
 
             //lua_stackDump(conf->lua_state);
 
@@ -314,11 +315,10 @@ void add_relation(
             lua_pushstring(conf->lua_state, value);
             //lua_stackDump(conf->lua_state);
 
-            // lua_stackDump(conf->lua_state);
+            //lua_stackDump(conf->lua_state);
 
             lua_settable(conf->lua_state, -3);
             //lua_stackDump(conf->lua_state);
-            //lua_setglobal(conf->lua_state, key);
 
             lua_setglobal(conf->lua_state, key);
             break;

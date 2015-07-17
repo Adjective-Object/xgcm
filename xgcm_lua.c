@@ -5,9 +5,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
-
-#include "xgcm_lua.h"
-
+#include "linit.h"
 
 void rgb_from_hex_str(double rgb[3], char *str) {
     char cr[3], cg[3], cb[3];

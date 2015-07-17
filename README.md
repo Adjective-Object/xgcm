@@ -2,36 +2,32 @@
 <img src="https://rawgit.com/Adjective-Object/xgcm/master/xgcm_logo.svg" />
 <br>
 <img src="https://img.shields.io/badge/under-refactoring-FF530D.svg?style=flat-square" />
-<img src="https://img.shields.io/badge/eyy-lmao-00A388.svg?style=flat-square" />
+<img src="https://img.shields.io/badge/kinda-working-00A388.svg?style=flat-square" />
 </p>
 <p align='center'>A simple Global Config Manager</p>
 
 ##About
 
-xgcm (Ziggy see em) is an simple tool for managing config files.
+xgcm (Ziggy see em) 
+is an simple tool for managing config files.
 
-Many tools use their own *rc files instead of reading from 
-Xresources, environment variables, etc. 
-This tool provides a simple templating language for config files
-
-It's written in C so it can be as universal as possible.
-
-please read [the style guide](STYLE.md) before contributing.
+Many tools use their own *rc files instead of reading from Xresources, 
+environment variables, etc. This tool provides a simple templating language 
+for config files, in order to centralize control variables in one place.
 
 ## Usage 
 
+AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 
-git 
 ## Contributors
 
-[string "..."]:34: attempt to call global 'ipairs' (a nil value)
+ 1: Adjective-Object 2: Maybe you?
+
+
+Generated from [README.md.xgcm](README.md.xgcm) with config 
+[sample_xgcmrc](example/sample_xgcmrc)
 
 
 
-Generated from [README.md.xgcm](README.md.xgcm) with config [sample_xgcmrc](sample_xgcmrc)
 
-
-
-
-[alien]: http://i3.kym-cdn.com/entries/icons/original/000/014/178/alien.jpg
 [xgcm-logo]: https://rawgit.com/Adjective-Object/xgcm/master/xgcm_logo.svg
