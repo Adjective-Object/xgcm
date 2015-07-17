@@ -13,10 +13,13 @@
       local result = ""
       local count = 0
       for k, v in ipairs( tbl ) do
-        result = result .. " " .. k .. ": "..  v
+        if string.len(result) ~= 0 then
+            result = result .. ", "
+        end
+        result = result .. v
         count = count + 1
       end
-      return result
+      return result 
     end
 
 [xgcm]

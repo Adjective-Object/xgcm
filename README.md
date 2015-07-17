@@ -21,7 +21,7 @@ AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 
 ## Contributors
 
- 1: Adjective-Object 2: Maybe you?
+Adjective-Object, Maybe you?
 
 
 Generated from [README.md.xgcm](README.md.xgcm) with config 
