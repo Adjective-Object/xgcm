@@ -9,6 +9,14 @@ lua_darken_test {[ lab_lumdiff(red, -1.2) ]}
 
 multiple_assignment_test: {[ multiple_assignment_test ]}
 
+rgba_foreground: {[ rgba_comma_repr(foreground) ]}
+
+lua_select_test_darker: {[ lab_select_lum(color1, color2, false) ]}
+lua_select_test_lighter: {[ lab_select_lum(color1, color2, true) ]}
+
+setting x to 20... {[~ x = 20]}
+x = {[x]}
+
 !-------------------------
 ! terminal colors 
 !-------------------------
@@ -25,7 +33,6 @@ multiple_assignment_test: {[ multiple_assignment_test ]}
 
 *.color2:       {[ green ]}
 *.color10:      {[ bright_green ]}
-
 
 *.color3:       {[ yellow ]}
 *.color11:      {[ bright_yellow ]}

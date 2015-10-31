@@ -117,9 +117,9 @@ void rgb_from_xyz(double rgb[3], double xyz[3]) {
 void hex_str_from_rgb(char out_str[9], double rgb[3]) {
     out_str[0] = '#';
 
-    sprintf((out_str + 1), "%2x", (unsigned int) rgb[0]);
-    sprintf((out_str + 3), "%2x", (unsigned int) rgb[1]);
-    sprintf((out_str + 5), "%2x", (unsigned int) rgb[2]);
+    sprintf((out_str + 1), "%02x", (unsigned int) rgb[0]);
+    sprintf((out_str + 3), "%02x", (unsigned int) rgb[1]);
+    sprintf((out_str + 5), "%02x", (unsigned int) rgb[2]);
 }
 
 
@@ -128,8 +128,10 @@ void lua_eval(xgcm_configuration *conf, const char *luaCall) {
     // like luaL_dostring(conf->lua_state, luaCall);
     // but it respects lua 'return's
 
-    if (!luaL_loadstring(conf->lua_state, luaCall))
-        lua_pcall(conf->lua_state, 0, LUA_MULTRET, 0);
+    luaL_dostring(conf->lua_state, luaCall);
+
+    // if (!luaL_loadstring(conf->lua_state, luaCall))
+    //    lua_pcall(conf->lua_state, 0, LUA_MULTRET, 0);
 }
 
 char *lua_eval_return(xgcm_configuration *conf, const char *luaCall) {
@@ -153,8 +155,8 @@ char *lua_eval_return(xgcm_configuration *conf, const char *luaCall) {
     if (lua_istable(conf->lua_state, -1)) {
         
         // for some reason lua_isnil was not working...
-        int index = 0;
-        char * tablevalue;
+        int index = 1;
+        const char * tablevalue;
         do {
             d_printf("checking table index: %d", index)
             lua_pushnumber(conf->lua_state, index);
@@ -197,6 +199,43 @@ int l_set_output_path(lua_State *L) {
             final_path = expandedpath;
 
     return 0;
+}
+
+int l_lab_select_lum(lua_State *L) {
+    // select(dex_color_1, hex_color_2, bool darker)
+    char * hexString1 = lua_tostring(L, -3);
+    char * hexString2 = lua_tostring(L, -2);
+    int select_lighter= lua_toboolean(L, -1);
+    lua_pop(L, 3);
+
+    double rgb1[3], xyz1[3], lab1[3],
+           rgb2[3], xyz2[3], lab2[3];
+    
+    // convert the hex strings to their lab representation
+    rgb_from_hex_str(rgb1, hexString1);
+    xyz_from_rgb(xyz1, rgb1); // then to xyz
+    lab_from_xyz(lab1, xyz1); // then to lab
+    
+    rgb_from_hex_str(rgb2, hexString2);
+    xyz_from_rgb(xyz2, rgb2); // then to xyz
+    lab_from_xyz(lab2, xyz2); // then to lab
+    
+    // if darker, return the darker of the two
+    double * target = (select_lighter ^ (lab1[0] < lab2[0])) ? lab1 : lab2;
+
+    // convert back to rgb
+    xyz_from_lab(xyz1, target); // to xyz
+    rgb_from_xyz(rgb1, xyz1); // to rgb
+    //printf("lab: %f, %f, %f\n", target[0], target[1], target[2]);
+    //printf("xyz: %f, %f, %f\n", xyz1[0], xyz1[1], xyz1[2]);
+    //printf("rgb: %f, %f, %f\n", rgb1[0], rgb1[1], rgb1[2]);
+
+    char out_str[9];
+    hex_str_from_rgb(out_str, rgb1);
+    //printf("output: %s\n", out_str);
+
+    lua_pushstring(L, out_str);
+    return 1;
 }
 
 int l_lab_lumdiff(lua_State *L) {
@@ -257,14 +296,39 @@ int l_lab_lumset(lua_State *L) {
     return 1;
 }
 
+int l_rgba_comma_repr(lua_State *L) {
+    char * hexString = lua_tostring(L, -1);
+    lua_pop(L, 1);
+    
+    double rgb[3];
+    rgb_from_hex_str(rgb, hexString);
+
+    char out_str[15];
+    sprintf((out_str), "%3d", (unsigned int) rgb[0]);
+    out_str[3] = ',';
+    sprintf((out_str + 4), "%3d", (unsigned int) rgb[1]);
+    out_str[7] = ',';
+    sprintf((out_str + 8), "%3d", (unsigned int) rgb[2]);
+    out_str[14] = '\0';
+    
+    lua_pushstring(L, out_str);
+
+    return 1;
+}
+
 void register_xgcm_fns(lua_State *L) {
     lua_pushcfunction(L, l_set_output_path);
     lua_setglobal(L, "xgcm_output_path");
 
+    lua_pushcfunction(L, l_lab_select_lum);
+    lua_setglobal(L, "lab_select_lum");
+
     lua_pushcfunction(L, l_lab_lumdiff);
     lua_setglobal(L, "lab_lumdiff");
 
-
     lua_pushcfunction(L, l_lab_lumset);
     lua_setglobal(L, "lab_lumset");
+
+    lua_pushcfunction(L, l_rgba_comma_repr);
+    lua_setglobal(L, "rgba_comma_repr");
 }
