@@ -28,7 +28,7 @@ add_library(XGCM_LIB OBJECT ${LIB_SRCS})
 
 add_executable(xgcm xgcm.c $<TARGET_OBJECTS:XGCM_LIB>)
 
-pkg_search_module(LUA REQUIRED liblua)
+pkg_search_module(LUA REQUIRED lua)
 
 target_link_libraries(xgcm ${LUA_LIBRARIES})
 include_directories(xgcm PUBLIC ${LUA_INCLUDE_DIRS})
